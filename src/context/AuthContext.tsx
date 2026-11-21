@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
 export type UserRole = 'DOKTER' | 'PENDAFTARAN' | 'KASIR';
@@ -11,152 +11,162 @@ export interface User {
   name: string;
   role: UserRole;
   roleLabel: string;
-  sipNumber?: string;
+  sipNumber?: string | null;
 }
 
-export interface AccountData extends User {
-  pass: string;
+export interface StaffAccount extends User {
+  isActive?: boolean;
+  newPassword?: string;
 }
-
-export const INITIAL_ACCOUNTS: Record<string, AccountData> = {
-  yulipanjaitan: {
-    id: 'USR-01',
-    username: 'yulipanjaitan',
-    pass: 'admin123',
-    name: 'drg. Yuli Kartilla Panjaitan',
-    role: 'DOKTER',
-    roleLabel: 'Dokter Gigi Umum & Penanggung Jawab',
-    sipNumber: 'SIP.503/449/DRG/2026',
-  },
-  pendaftaran: {
-    id: 'USR-02',
-    username: 'pendaftaran',
-    pass: 'fo123',
-    name: 'Budi Santoso, A.Md.Kes',
-    role: 'PENDAFTARAN',
-    roleLabel: 'Petugas Front Office & Registrasi',
-  },
-  kasir: {
-    id: 'USR-03',
-    username: 'kasir',
-    pass: 'kasir123',
-    name: 'Siti Rahma, S.E.',
-    role: 'KASIR',
-    roleLabel: 'Staf Kasir & Billing',
-  },
-};
 
 interface AuthContextType {
   currentUser: User | null;
-  accounts: Record<string, AccountData>;
-  loginWithCredentials: (username: string, pass: string) => { success: boolean; message?: string };
-  updateAccounts: (newAccounts: Record<string, AccountData>) => void;
-  logout: () => void;
+  staffUsers: StaffAccount[];
+  loginWithCredentials: (username: string, pass: string) => Promise<{ success: boolean; message?: string }>;
+  registerAccount: (payload: {
+    name: string;
+    username: string;
+    pass: string;
+    registrationToken: string;
+  }) => Promise<{ success: boolean; message?: string; assignedRole?: string }>;
+  loadStaffUsers: () => Promise<StaffAccount[]>;
+  updateStaffUsers: (updates: StaffAccount[]) => Promise<{ success: boolean; message?: string }>;
+  logout: () => Promise<void>;
   isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
   currentUser: null,
-  accounts: INITIAL_ACCOUNTS,
-  loginWithCredentials: () => ({ success: false }),
-  updateAccounts: () => {},
-  logout: () => {},
+  staffUsers: [],
+  loginWithCredentials: async () => ({ success: false }),
+  registerAccount: async () => ({ success: false }),
+  loadStaffUsers: async () => [],
+  updateStaffUsers: async () => ({ success: false }),
+  logout: async () => {},
   isLoading: true,
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [accounts, setAccounts] = useState<Record<string, AccountData>>(INITIAL_ACCOUNTS);
+  const [staffUsers, setStaffUsers] = useState<StaffAccount[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  // Muat akun tersimpan dan sesi pengguna saat aplikasi dimuat
-  useEffect(() => {
-    const savedAccounts = localStorage.getItem('yovela_accounts_db');
-    let loadedAccounts = INITIAL_ACCOUNTS;
-    if (savedAccounts) {
-      try {
-        loadedAccounts = JSON.parse(savedAccounts);
-        setAccounts(loadedAccounts);
-      } catch {
-        localStorage.setItem('yovela_accounts_db', JSON.stringify(INITIAL_ACCOUNTS));
+  const fetchMe = useCallback(async () => {
+    try {
+      const res = await fetch('/api/auth/me', { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        setCurrentUser(data.user || null);
+      } else {
+        setCurrentUser(null);
       }
-    } else {
-      localStorage.setItem('yovela_accounts_db', JSON.stringify(INITIAL_ACCOUNTS));
+    } catch {
+      setCurrentUser(null);
+    } finally {
+      setIsLoading(false);
     }
-
-    const savedUser = localStorage.getItem('yovela_auth_user');
-    if (savedUser) {
-      try {
-        setCurrentUser(JSON.parse(savedUser));
-      } catch {
-        localStorage.removeItem('yovela_auth_user');
-      }
-    }
-    setIsLoading(false);
   }, []);
 
-  const updateAccounts = (newAccounts: Record<string, AccountData>) => {
-    setAccounts(newAccounts);
-    localStorage.setItem('yovela_accounts_db', JSON.stringify(newAccounts));
+  useEffect(() => {
+    fetchMe();
+  }, [fetchMe]);
 
-    // Jika dokter mengubah datanya sendiri, perbarui juga currentUser aktif
-    if (currentUser) {
-      const activeAccount = Object.values(newAccounts).find((a) => a.id === currentUser.id);
-      if (activeAccount) {
-        const updatedUser: User = {
-          id: activeAccount.id,
-          username: activeAccount.username,
-          name: activeAccount.name,
-          role: activeAccount.role,
-          roleLabel: activeAccount.roleLabel,
-          sipNumber: activeAccount.sipNumber,
-        };
-        setCurrentUser(updatedUser);
-        localStorage.setItem('yovela_auth_user', JSON.stringify(updatedUser));
+  const loadStaffUsers = useCallback(async (): Promise<StaffAccount[]> => {
+    try {
+      const res = await fetch('/api/auth/users', { cache: 'no-store' });
+      if (!res.ok) return [];
+      const data = await res.json();
+      const list = Array.isArray(data.users) ? data.users : [];
+      setStaffUsers(list);
+      return list;
+    } catch {
+      return [];
+    }
+  }, []);
+
+  const updateStaffUsers = async (updates: StaffAccount[]) => {
+    try {
+      const res = await fetch('/api/auth/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ users: updates }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        return { success: false, message: data.error || 'Gagal menyimpan perubahan akun.' };
       }
-    }
-  };
-
-  const loginWithCredentials = (username: string, pass: string) => {
-    const savedAccounts = localStorage.getItem('yovela_accounts_db');
-    const currentList: Record<string, AccountData> = savedAccounts
-      ? JSON.parse(savedAccounts)
-      : accounts;
-
-    const target = Object.values(currentList).find(
-      (acc) => acc.username.toLowerCase() === username.trim().toLowerCase()
-    );
-
-    if (target && target.pass === pass) {
-      const userData: User = {
-        id: target.id,
-        username: target.username,
-        name: target.name,
-        role: target.role,
-        roleLabel: target.roleLabel,
-        sipNumber: target.sipNumber,
-      };
-      setCurrentUser(userData);
-      localStorage.setItem('yovela_auth_user', JSON.stringify(userData));
+      setStaffUsers(data.users || []);
+      await fetchMe();
       return { success: true };
+    } catch {
+      return { success: false, message: 'Gagal terhubung ke server.' };
     }
-    return { success: false, message: 'Username atau kata sandi tidak cocok!' };
   };
 
-  const logout = () => {
+  const registerAccount = async ({
+    name,
+    username,
+    pass,
+    registrationToken,
+  }: {
+    name: string;
+    username: string;
+    pass: string;
+    registrationToken: string;
+  }) => {
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, username, password: pass, registrationToken }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        return { success: false, message: data.error || 'Gagal mendaftarkan akun.' };
+      }
+      return { success: true, assignedRole: data.user?.roleLabel || data.user?.role };
+    } catch {
+      return { success: false, message: 'Gagal terhubung ke server.' };
+    }
+  };
+
+  const loginWithCredentials = async (username: string, pass: string) => {
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password: pass }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        return { success: false, message: data.error || 'Username atau kata sandi tidak cocok!' };
+      }
+      setCurrentUser(data.user);
+      return { success: true };
+    } catch {
+      return { success: false, message: 'Gagal terhubung ke server autentikasi.' };
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch {}
     setCurrentUser(null);
-    localStorage.removeItem('yovela_auth_user');
-    router.push('/login');
+    setStaffUsers([]);
+    router.replace('/login');
   };
 
   return (
     <AuthContext.Provider
       value={{
         currentUser,
-        accounts,
+        staffUsers,
         loginWithCredentials,
-        updateAccounts,
+        registerAccount,
+        loadStaffUsers,
+        updateStaffUsers,
         logout,
         isLoading,
       }}

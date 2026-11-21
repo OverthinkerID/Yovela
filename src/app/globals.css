@@ -1,21 +1,79 @@
 @import "tailwindcss";
 
+@theme inline {
+  --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+}
+
 :root {
-  --font-poppins: 'Poppins', sans-serif;
-  --color-mint: #26d4a5;
+  --forest-950: #0E261C;
+  --forest-900: #1B4332;
+  --forest-700: #2D6A4F;
+  --forest-500: #40916C;
+  --oat-50: #FAF7F0;
+  --oat-100: #F5F1E8;
+  --oat-200: #E8E1D3;
+  --oat-300: #DED6C5;
+  --tomato-500: #E63946;
+  --tomato-600: #D62828;
 }
 
 body {
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+  background-color: var(--oat-100);
+  color: var(--forest-900);
 }
 
-/* Efek Hover Kursor Halus untuk Komponen Interaktif */
+/* Dark Forest Mode Overrides */
+html.dark body {
+  background-color: #091913;
+  color: #EAF3EE;
+}
+html.dark .bg-\[\#F5F1E8\] {
+  background-color: #091913 !important;
+}
+html.dark .bg-\[\#FAF7F0\],
+html.dark .bg-\[\#FAF7F0\]\/90,
+html.dark .bg-white,
+html.dark .bg-white\/95,
+html.dark .bg-white\/90 {
+  background-color: #112A20 !important;
+  color: #EAF3EE !important;
+}
+html.dark .bg-slate-50,
+html.dark .bg-slate-50\/60,
+html.dark .bg-slate-50\/70,
+html.dark .bg-slate-50\/80,
+html.dark .bg-slate-100 {
+  background-color: #16362A !important;
+}
+html.dark .border-\[\#E8E1D3\],
+html.dark .border-\[\#DED6C5\],
+html.dark .border-slate-200,
+html.dark .border-slate-200\/90,
+html.dark .border-slate-200\/80,
+html.dark .border-slate-100 {
+  border-color: #244D3D !important;
+}
+html.dark .text-\[\#1B4332\],
+html.dark .text-slate-900,
+html.dark .text-slate-800,
+html.dark .text-slate-700 {
+  color: #EAF3EE !important;
+}
+html.dark .text-\[\#52796F\],
+html.dark .text-slate-600,
+html.dark .text-slate-500,
+html.dark .text-slate-400 {
+  color: #9BC2AF !important;
+}
+
+/* Efek Hover Kursor Halus */
 .hover-lift {
   transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s ease;
 }
 .hover-lift:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px -4px rgba(38, 212, 165, 0.18);
+  box-shadow: 0 10px 24px -6px rgba(27, 67, 50, 0.2);
 }
 
 /* Kursor Hover Permukaan Segmen Gigi Odontogram */
@@ -23,8 +81,40 @@ body {
   transition: fill 0.15s ease, stroke 0.15s ease, filter 0.15s ease;
 }
 .tooth-segment:hover {
-  filter: drop-shadow(0 0 3px #26d4a5) brightness(1.08);
-  stroke: #26d4a5 !important;
+  filter: drop-shadow(0 0 3px #2D6A4F) brightness(1.06);
+  stroke: #1B4332 !important;
   stroke-width: 2.2px !important;
   cursor: pointer;
+}
+
+/* Animasi Banner Dasbor Hidup */
+@keyframes gradientFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes floatSlow {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50% { transform: translateY(-10px) scale(1.04); }
+}
+
+.animate-gradient-flow {
+  background-size: 200% 200%;
+  animation: gradientFlow 10s ease infinite;
+}
+
+.animate-float-slow {
+  animation: floatSlow 6s ease-in-out infinite;
+}
+
+/* Animasi Teks Berjalan Display TV */
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-100%); }
+}
+
+.animate-marquee {
+  display: inline-block;
+  animation: marquee 28s linear infinite;
 }

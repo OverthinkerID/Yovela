@@ -3,6 +3,7 @@ import { Treatment } from './mockData';
 
 export interface PatientRecord {
   id: string;
+  encounterId?: string;
   queueNumber: string;
   name: string;
   rmNumber: string;
@@ -16,12 +17,13 @@ export interface PatientRecord {
   registrationDate: string;
   statusKunjungan: 'Menunggu' | 'Sedang Diperiksa' | 'Menunggu Pembayaran' | 'Selesai';
   registeredBy?: string;
-  initialOdontogram?: Record<number, any>;
+  initialOdontogram?: Record<number, ToothData>;
   lastSoap?: {
     subjective: string;
     objective: string;
     diagnosisIcd10: string;
     suggestedTreatments?: string[];
+    prescriptionNotes?: string;
   };
 }
 
@@ -49,7 +51,7 @@ export const INITIAL_PATIENTS: PatientRecord[] = [
       subjective: "Pasien mengeluhkan ngilu tajam pada gigi kanan atas saat minum air es sejak 3 hari lalu.",
       objective: "Gigi 16 karies oklusal mencapai dentin dalam, tes dingin (+), palpasi (-), perkusi (-).",
       diagnosisIcd10: "K04.0",
-      suggestedTreatments: ["t-01", "t-02"]
+      suggestedTreatments: ["TRT-001", "TRT-011"]
     }
   },
   {
@@ -69,13 +71,13 @@ export const INITIAL_PATIENTS: PatientRecord[] = [
     registeredBy: "Budi Santoso, A.Md.Kes (Front Office)",
     initialOdontogram: {
       21: { generalCondition: "normal", surfaces: { mesial: "composite", distal: null, occlusal: null, buccal: null, lingual: null }, notes: "Tumpatan estetik lama" },
-      36: { generalCondition: "caries", surfaces: { occlusal: "caries", buccal: "caries", distal: null, mesial: null, lingual: null }, notes: "Karies profunda" }
+      36: { generalCondition: "normal", surfaces: { occlusal: "caries", buccal: "caries", distal: null, mesial: null, lingual: null }, notes: "Karies profunda" }
     },
     lastSoap: {
       subjective: "Gigi depan sewarna gusi ingin ditambal ulang karena estetika kurang baik, gigi geraham bawah kadang nyut-nyutan.",
       objective: "Gigi 21 fraktur insisal kecil dengan karies sekunder, gigi 36 karies mencapai pulpa.",
       diagnosisIcd10: "K02.1",
-      suggestedTreatments: ["t-01", "t-03"]
+      suggestedTreatments: ["TRT-008", "TRT-009"]
     }
   },
   {
@@ -101,7 +103,7 @@ export const INITIAL_PATIENTS: PatientRecord[] = [
       subjective: "Rahang belakang bawah terasa bengkak dan nyeri hilang timbul sejak seminggu yang lalu saat dipakai mengunyah.",
       objective: "Gigi 38 dan 48 impaksi, operkulitis ringan pada mukosa sekitar gigi 38.",
       diagnosisIcd10: "K01.1",
-      suggestedTreatments: ["t-04"]
+      suggestedTreatments: ["TRT-002", "TRT-016"]
     }
   },
   {
@@ -127,7 +129,7 @@ export const INITIAL_PATIENTS: PatientRecord[] = [
       subjective: "Ada celah kehitaman di antara gigi depan atas yang sering nyangkut makanan dan terasa ngilu.",
       objective: "Karies email/dentin pada sisi interdental gigi 11 dan 12.",
       diagnosisIcd10: "K02.0",
-      suggestedTreatments: ["t-01"]
+      suggestedTreatments: ["TRT-008"]
     }
   },
   {
@@ -152,7 +154,7 @@ export const INITIAL_PATIENTS: PatientRecord[] = [
       subjective: "Gigi belakang bawah berlubang besar tinggal akar, ingin dicabut karena sering menusuk lidah.",
       objective: "Mahkota gigi 46 hancur total tinggal sisa akar (radix), jaringan sekitar radang kronis (-).",
       diagnosisIcd10: "K04.1",
-      suggestedTreatments: ["t-05"]
+      suggestedTreatments: ["TRT-015"]
     }
   },
   {
@@ -177,7 +179,7 @@ export const INITIAL_PATIENTS: PatientRecord[] = [
       subjective: "Kontrol pasca perawatan saluran akar gigi geraham atas kiri, sudah tidak ada keluhan nyeri spontan.",
       objective: "Perkusi (-), palpasi (-), restorasi sementara/tetap intak dan baik.",
       diagnosisIcd10: "K04.4",
-      suggestedTreatments: ["t-02", "t-06"]
+      suggestedTreatments: ["TRT-001", "TRT-012"]
     }
   },
   {
@@ -203,7 +205,7 @@ export const INITIAL_PATIENTS: PatientRecord[] = [
       subjective: "Ingin membuat gigi tiruan/palsu untuk menggantikan gigi belakang bawah yang sudah lama dicabut.",
       objective: "Edentulous area pada regio 36 dan 37, jaringan pendukung sehat dan kuat.",
       diagnosisIcd10: "K08.1",
-      suggestedTreatments: ["t-07"]
+      suggestedTreatments: ["TRT-001", "TRT-023"]
     }
   },
   {
@@ -229,7 +231,7 @@ export const INITIAL_PATIENTS: PatientRecord[] = [
       subjective: "Leher gigi terasa linu saat tersikat sikat gigi atau terkena air dingin.",
       objective: "Abrasio / karies servikal pada gigi 13 dan 14 bagian bukal.",
       diagnosisIcd10: "K03.1",
-      suggestedTreatments: ["t-01"]
+      suggestedTreatments: ["TRT-008"]
     }
   },
   {
@@ -254,7 +256,7 @@ export const INITIAL_PATIENTS: PatientRecord[] = [
       subjective: "Kontrol tambalan sementara gigi geraham kecil bawah, sudah tidak ngilu.",
       objective: "Tumpatan sementara utuh, tes vitalitas (+) normal.",
       diagnosisIcd10: "K02.1",
-      suggestedTreatments: ["t-01"]
+      suggestedTreatments: ["TRT-009"]
     }
   },
   {
@@ -280,7 +282,7 @@ export const INITIAL_PATIENTS: PatientRecord[] = [
       subjective: "Gusi sering berdarah saat menggosok gigi dan nafas terasa kurang segar.",
       objective: "Kalkulus (karang gigi) subgingiva dan supragingiva menyeluruh, gingivitis ringan.",
       diagnosisIcd10: "K05.1",
-      suggestedTreatments: ["t-08"]
+      suggestedTreatments: ["TRT-005"]
     }
   }
 ];

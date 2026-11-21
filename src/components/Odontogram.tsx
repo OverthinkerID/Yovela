@@ -4,7 +4,7 @@ import React from 'react';
 
 export type ToothSurface = 'occlusal' | 'mesial' | 'distal' | 'buccal' | 'lingual';
 
-export type GeneralToothCondition = 
+export type GeneralToothCondition =
   | 'normal'
   | 'missing'
   | 'radix'
@@ -34,6 +34,47 @@ export const SURFACE_COLORS: Record<string, { fill: string; stroke: string; labe
   temporary: { fill: '#f59e0b', stroke: '#b45309', label: 'Tumpatan Sementara' },
 };
 
+/**
+ * Orientasi permukaan gigi sesuai standar anatomi FDI (dilihat dari depan pasien):
+ * - Kuadran Kanan Pasien (Q1, Q4, Q5, Q8 — sisi kiri layar): Mesial di KANAN (menuju garis tengah), Distal di KIRI.
+ * - Kuadran Kiri Pasien (Q2, Q3, Q6, Q7 — sisi kanan layar): Mesial di KIRI (menuju garis tengah), Distal di KANAN.
+ * - Rahang Atas (Q1, Q2, Q5, Q6): Bukal/Labial di ATAS, Palatal/Lingual di BAWAH.
+ * - Rahang Bawah (Q3, Q4, Q7, Q8): Lingual di ATAS (menuju lidah), Bukal/Labial di BAWAH.
+ */
+function getFdiSurfaceMap(toothNumber: number): {
+  top: { surface: ToothSurface; label: string };
+  bottom: { surface: ToothSurface; label: string };
+  left: { surface: ToothSurface; label: string };
+  right: { surface: ToothSurface; label: string };
+  center: { surface: ToothSurface; label: string };
+} {
+  const quadrant = Math.floor(toothNumber / 10);
+  const toothPos = toothNumber % 10;
+  const isUpper = quadrant === 1 || quadrant === 2 || quadrant === 5 || quadrant === 6;
+  const isRightPatientSide = quadrant === 1 || quadrant === 4 || quadrant === 5 || quadrant === 8;
+  const isAnterior = toothPos >= 1 && toothPos <= 3;
+
+  const buccalLabel = isAnterior ? 'Labial (Bukal)' : 'Bukal';
+  const lingualLabel = isUpper ? 'Palatal (Lingual)' : 'Lingual';
+  const centerLabel = isAnterior ? 'Insisal (Oklusal)' : 'Oklusal';
+
+  return {
+    top: isUpper
+      ? { surface: 'buccal', label: buccalLabel }
+      : { surface: 'lingual', label: lingualLabel },
+    bottom: isUpper
+      ? { surface: 'lingual', label: lingualLabel }
+      : { surface: 'buccal', label: buccalLabel },
+    left: isRightPatientSide
+      ? { surface: 'distal', label: 'Distal' }
+      : { surface: 'mesial', label: 'Mesial' },
+    right: isRightPatientSide
+      ? { surface: 'mesial', label: 'Mesial' }
+      : { surface: 'distal', label: 'Distal' },
+    center: { surface: 'occlusal', label: centerLabel },
+  };
+}
+
 export const Tooth: React.FC<ToothProps> = ({
   toothNumber,
   data,
@@ -49,6 +90,7 @@ export const Tooth: React.FC<ToothProps> = ({
     lingual: null,
   };
   const generalCondition = data?.generalCondition || 'normal';
+  const surfaceMap = getFdiSurfaceMap(toothNumber);
 
   const getSurfaceColor = (surf: ToothSurface) => {
     const cond = surfaces[surf];
@@ -75,69 +117,79 @@ export const Tooth: React.FC<ToothProps> = ({
           isDeciduous
             ? 'bg-amber-100 text-amber-900 hover:bg-amber-200 border border-amber-300'
             : generalCondition !== 'normal'
-            ? 'bg-[#26d4a5] text-slate-950 font-black shadow-xs'
-            : 'bg-slate-100 text-slate-700 hover:bg-[#26d4a5]/20 hover:text-slate-900'
+            ? 'bg-[#1B4332] text-[#FAF7F0] font-black shadow-xs'
+            : 'bg-slate-100 text-slate-700 hover:bg-[#1B4332]/15 hover:text-slate-900'
         }`}
       >
         {toothNumber}
       </button>
 
-      {/* Kotak Gigi dengan Efek Kursor Hover Terangkat & Glow */}
-      <div 
-        className={`relative p-1 rounded-xl bg-white border cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-md hover:border-[#26d4a5] ${
+      {/* Kotak Gigi dengan Orientasi Anatomi FDI */}
+      <div
+        className={`relative p-1 rounded-xl bg-white border cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-md hover:border-[#1B4332] ${
           isImpacted ? 'border-dashed border-amber-500 bg-amber-50/40' : 'border-slate-200 shadow-2xs'
         } ${isCrown ? 'ring-2 ring-amber-400 bg-amber-50/20' : ''}`}
       >
         <svg viewBox="0 0 100 100" className="w-9 h-9 md:w-10 md:h-10">
-          {/* 1. Bukal / Labial (Segmen Atas) */}
+          {/* 1. Segmen Atas (Bukal/Labial di Rahang Atas, Lingual di Rahang Bawah) */}
           <polygon
             points="10,10 90,10 70,30 30,30"
-            fill={getSurfaceColor('buccal')}
+            fill={getSurfaceColor(surfaceMap.top.surface)}
             stroke="#94a3b8"
             strokeWidth="1.5"
             className="tooth-segment"
-            onClick={() => onSurfaceClick(toothNumber, 'buccal')}
-          />
+            onClick={() => onSurfaceClick(toothNumber, surfaceMap.top.surface)}
+          >
+            <title>{`Gigi #${toothNumber} — ${surfaceMap.top.label}`}</title>
+          </polygon>
 
-          {/* 2. Distal (Segmen Kanan) */}
+          {/* 2. Segmen Kanan (Mesial di Q1/Q4/Q5/Q8, Distal di Q2/Q3/Q6/Q7) */}
           <polygon
             points="90,10 90,90 70,70 70,30"
-            fill={getSurfaceColor('distal')}
+            fill={getSurfaceColor(surfaceMap.right.surface)}
             stroke="#94a3b8"
             strokeWidth="1.5"
             className="tooth-segment"
-            onClick={() => onSurfaceClick(toothNumber, 'distal')}
-          />
+            onClick={() => onSurfaceClick(toothNumber, surfaceMap.right.surface)}
+          >
+            <title>{`Gigi #${toothNumber} — ${surfaceMap.right.label}`}</title>
+          </polygon>
 
-          {/* 3. Lingual / Palatal (Segmen Bawah) */}
+          {/* 3. Segmen Bawah (Palatal di Rahang Atas, Bukal/Labial di Rahang Bawah) */}
           <polygon
             points="90,90 10,90 30,70 70,70"
-            fill={getSurfaceColor('lingual')}
+            fill={getSurfaceColor(surfaceMap.bottom.surface)}
             stroke="#94a3b8"
             strokeWidth="1.5"
             className="tooth-segment"
-            onClick={() => onSurfaceClick(toothNumber, 'lingual')}
-          />
+            onClick={() => onSurfaceClick(toothNumber, surfaceMap.bottom.surface)}
+          >
+            <title>{`Gigi #${toothNumber} — ${surfaceMap.bottom.label}`}</title>
+          </polygon>
 
-          {/* 4. Mesial (Segmen Kiri) */}
+          {/* 4. Segmen Kiri (Distal di Q1/Q4/Q5/Q8, Mesial di Q2/Q3/Q6/Q7) */}
           <polygon
             points="10,90 10,10 30,30 30,70"
-            fill={getSurfaceColor('mesial')}
+            fill={getSurfaceColor(surfaceMap.left.surface)}
             stroke="#94a3b8"
             strokeWidth="1.5"
             className="tooth-segment"
-            onClick={() => onSurfaceClick(toothNumber, 'mesial')}
-          />
+            onClick={() => onSurfaceClick(toothNumber, surfaceMap.left.surface)}
+          >
+            <title>{`Gigi #${toothNumber} — ${surfaceMap.left.label}`}</title>
+          </polygon>
 
-          {/* 5. Oklusal / Insisal (Segmen Tengah) */}
+          {/* 5. Segmen Tengah (Oklusal / Insisal) */}
           <polygon
             points="30,30 70,30 70,70 30,70"
-            fill={getSurfaceColor('occlusal')}
+            fill={getSurfaceColor(surfaceMap.center.surface)}
             stroke="#94a3b8"
             strokeWidth="1.5"
             className="tooth-segment"
-            onClick={() => onSurfaceClick(toothNumber, 'occlusal')}
-          />
+            onClick={() => onSurfaceClick(toothNumber, surfaceMap.center.surface)}
+          >
+            <title>{`Gigi #${toothNumber} — ${surfaceMap.center.label}`}</title>
+          </polygon>
 
           {/* Layer Kondisi Khusus: Missing / Hilang (Silang Merah) */}
           {isMissing && (
@@ -176,7 +228,7 @@ export const Tooth: React.FC<ToothProps> = ({
 
       {/* Indikator Titik Mint Catatan Klinis */}
       {data?.notes && (
-        <span className="w-1.5 h-1.5 rounded-full bg-[#26d4a5] mt-1" title={data.notes} />
+        <span className="w-1.5 h-1.5 rounded-full bg-[#1B4332] mt-1" title={data.notes} />
       )}
     </div>
   );

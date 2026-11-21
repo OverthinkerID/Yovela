@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { AppIcon } from "@/components/AppIcon";
 import { getStoredPatients, PatientRecord } from '../../../data/patientDatabase';
 
 export default function DisplayAntreanPage() {
@@ -33,26 +34,59 @@ export default function DisplayAntreanPage() {
     return () => clearInterval(timer);
   }, []);
 
-  // 2. Muat Data Pasien dari Folder Database
-  useEffect(() => {
-    const list = getStoredPatients();
-    setPatientsQueue(list);
+  const lastCallIdRef = React.useRef<string | null>(null);
 
-    const savedCall = localStorage.getItem('yovela_calling_queue');
-    if (savedCall) {
+  // 2. Muat Data Pasien & Panggilan Terakhir dari Database API (Polling tiap 3 detik lintas perangkat)
+  useEffect(() => {
+    const loadTvQueue = async () => {
       try {
-        setCurrentCall(JSON.parse(savedCall));
-      } catch (e) {
-        console.error(e);
+        const [qRes, cRes] = await Promise.all([
+          fetch('/api/patients?view=tv', { cache: 'no-store' }),
+          fetch('/api/queue/call', { cache: 'no-store' }),
+        ]);
+
+        let list: PatientRecord[] = [];
+        if (qRes.ok) {
+          const data = await qRes.json();
+          list = data.patients || [];
+          setPatientsQueue(list);
+        }
+
+        if (cRes.ok) {
+          const cData = await cRes.json();
+          if (cData.call) {
+            const incoming = cData.call;
+            setCurrentCall({
+              queueNumber: incoming.queueNumber,
+              patientName: incoming.patientName,
+              roomName: incoming.roomName,
+              doctorName: incoming.doctorName,
+            });
+            if (lastCallIdRef.current && lastCallIdRef.current !== incoming.id) {
+              speakQueueCall(incoming.queueNumber, incoming.patientName, incoming.roomName);
+            }
+            lastCallIdRef.current = incoming.id;
+            return;
+          }
+        }
+
+        const active = list.find((p) => p.statusKunjungan === 'Sedang Diperiksa') || list[0];
+        if (active && !lastCallIdRef.current) {
+          setCurrentCall({
+            queueNumber: active.queueNumber,
+            patientName: active.name,
+            roomName: 'Ruang Tindakan 01',
+            doctorName: 'drg. Yuli Kartilla Panjaitan (Dokter Gigi Umum)',
+          });
+        }
+      } catch (err) {
+        console.error('Gagal memuat antrean TV:', err);
       }
-    } else if (list.length > 0) {
-      setCurrentCall({
-        queueNumber: list[0].queueNumber,
-        patientName: list[0].name,
-        roomName: 'Ruang Tindakan 01',
-        doctorName: 'drg. Yuli Kartilla Panjaitan (Dokter Gigi Umum)',
-      });
-    }
+    };
+
+    loadTvQueue();
+    const poll = setInterval(loadTvQueue, 3000);
+    return () => clearInterval(poll);
   }, []);
 
   // 3. Audio Panggilan Suara Otomatis Bahasa Indonesia
@@ -81,7 +115,7 @@ export default function DisplayAntreanPage() {
         }
       }
 
-      if (event.key === 'yovela_patients_list' && event.newValue) {
+      if (event.key === 'yovela_patients_db' && event.newValue) {
         try {
           setPatientsQueue(JSON.parse(event.newValue));
         } catch (e) {
@@ -99,8 +133,8 @@ export default function DisplayAntreanPage() {
       {/* HEADER: Khas Tema Yovela Dental Mint */}
       <header className="bg-white rounded-3xl border border-slate-200/80 shadow-xs px-8 py-4 flex flex-wrap justify-between items-center gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-[#26d4a5]/15 border border-[#26d4a5]/30 flex items-center justify-center p-2.5 shadow-xs">
-            <svg viewBox="0 0 512 512" className="w-full h-full fill-[#26d4a5]">
+          <div className="w-14 h-14 rounded-2xl bg-[#1B4332]/10 border border-[#1B4332]/30 flex items-center justify-center p-2.5 shadow-xs">
+            <svg viewBox="0 0 512 512" className="w-full h-full fill-[#1B4332]">
               <path d="M416 112c-35.3 0-64 28.7-64 64v51.2c0 23.4-12.2 44.9-32.3 56.8L272 312.6l-47.7-28.6c-20.1-12-32.3-33.5-32.3-56.8V176c0-35.3-28.7-64-64-64S64 140.7 64 176c0 86.8 52.3 162.7 128 193.3V432c0 17.7 14.3 32 32 32h64c17.7 0 32-14.3 32-32V369.3c75.7-30.6 128-106.5 128-193.3c0-35.3-28.7-64-64-64z" />
             </svg>
           </div>
@@ -109,7 +143,7 @@ export default function DisplayAntreanPage() {
               Yovela Dental Clinic
             </h1>
             <p className="text-xs text-slate-500 font-normal flex items-center gap-2 mt-0.5">
-              <span className="w-2 h-2 rounded-full bg-[#26d4a5] animate-ping" />
+              <span className="w-2 h-2 rounded-full bg-[#1B4332] animate-ping" />
               <span>Display Antrean Ruang Tunggu Poli Gigi</span>
             </p>
           </div>
@@ -125,18 +159,18 @@ export default function DisplayAntreanPage() {
             }}
             className={`px-4 py-2 rounded-2xl text-xs font-semibold flex items-center gap-2 border transition cursor-pointer ${
               isAudioEnabled 
-                ? 'bg-[#26d4a5]/10 border-[#26d4a5]/40 text-[#0fa882]' 
+                ? 'bg-[#1B4332]/10 border-[#1B4332]/40 text-[#1B4332]' 
                 : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
             }`}
             title="Aktifkan panggilan audio otomatis"
           >
-            <i className={`fa-solid ${isAudioEnabled ? 'fa-volume-high text-[#0fa882]' : 'fa-volume-xmark text-slate-400'}`} />
+            <AppIcon name={isAudioEnabled ? "volume-high" : "volume-xmark"} className={isAudioEnabled ? "text-[#1B4332]" : "text-slate-400"} />
             <span>{isAudioEnabled ? 'Audio Panggilan Aktif' : 'Aktifkan Audio'}</span>
           </button>
 
           {/* Jam Digital Minimalis */}
           <div className="text-right bg-slate-50 border border-slate-200/80 px-5 py-2 rounded-2xl">
-            <span className="block text-2xl font-black font-mono text-[#0fa882] tracking-wide">
+            <span className="block text-2xl font-black font-mono text-[#1B4332] tracking-wide">
               {currentTime || '00:00:00'}
             </span>
             <span className="text-[10px] text-slate-400 font-medium uppercase">{currentDate}</span>
@@ -149,14 +183,14 @@ export default function DisplayAntreanPage() {
         {/* PANEL KIRI (7 Kolom): Panggilan Antrean Utama */}
         <div className="lg:col-span-7 bg-white border border-slate-200 rounded-3xl p-8 md:p-10 flex flex-col items-center justify-center text-center shadow-md relative overflow-hidden">
           {/* Badge Status Panggilan */}
-          <div className="px-4 py-1.5 rounded-full bg-[#26d4a5]/15 border border-[#26d4a5]/40 text-[#0fa882] text-xs font-bold uppercase tracking-wider mb-2 flex items-center gap-2">
-            <i className="fa-solid fa-bell animate-bounce text-xs" />
+          <div className="px-4 py-1.5 rounded-full bg-[#1B4332]/10 border border-[#1B4332]/40 text-[#1B4332] text-xs font-bold uppercase tracking-wider mb-2 flex items-center gap-2">
+            <AppIcon name="bell" className="animate-bounce text-xs" />
             <span>SEDANG DIPANGGIL</span>
           </div>
 
           {/* Nomor Antrean Utama Mint Glow */}
           <div className="my-1">
-            <h2 className="text-8xl md:text-9xl font-black font-mono text-[#0fa882] tracking-tight drop-shadow-sm">
+            <h2 className="text-8xl md:text-9xl font-black font-mono text-[#1B4332] tracking-tight drop-shadow-sm">
               {currentCall.queueNumber}
             </h2>
           </div>
@@ -171,7 +205,7 @@ export default function DisplayAntreanPage() {
             <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200">
               <span className="text-[11px] font-semibold text-slate-400 uppercase block mb-1">Tujuan Ruangan</span>
               <strong className="text-base md:text-lg text-slate-800 font-bold flex items-center gap-2">
-                <i className="fa-solid fa-door-open text-[#20b88f]" />
+                <AppIcon name="door-open" className="text-[#2D6A4F]" />
                 {currentCall.roomName}
               </strong>
             </div>
@@ -190,38 +224,41 @@ export default function DisplayAntreanPage() {
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-md flex-1 flex flex-col">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
-                <i className="fa-solid fa-list-ol text-[#20b88f]" />
+                <AppIcon name="list-ol" className="text-[#2D6A4F]" />
                 <span>Urutan Antrean Berikutnya</span>
               </h3>
-              <span className="text-xs text-[#0fa882] font-bold bg-[#26d4a5]/15 px-2.5 py-0.5 rounded-full">
-                {patientsQueue.length} Pasien Terdata
+              <span className="text-xs text-[#1B4332] font-bold bg-[#1B4332]/10 px-2.5 py-0.5 rounded-full">
+                {patientsQueue.filter((p) => p.statusKunjungan === 'Menunggu' || p.statusKunjungan === 'Sedang Diperiksa').length} Antrean Aktif
               </span>
             </div>
 
-            {/* List Pasien Menunggu */}
+            {/* List Pasien Menunggu & Sedang Diperiksa */}
             <div className="space-y-2.5 overflow-y-auto max-h-[350px] pr-1">
-              {patientsQueue.slice(0, 6).map((patient) => {
-                const isCurrent = patient.queueNumber === currentCall.queueNumber;
+              {patientsQueue
+                .filter((p) => p.statusKunjungan === 'Menunggu' || p.statusKunjungan === 'Sedang Diperiksa')
+                .slice(0, 6)
+                .map((patient) => {
+                const isCurrent = patient.queueNumber === currentCall.queueNumber || patient.statusKunjungan === 'Sedang Diperiksa';
                 return (
                   <div
                     key={patient.id}
                     className={`p-3.5 rounded-2xl border flex items-center justify-between transition ${
                       isCurrent
-                        ? 'bg-[#26d4a5]/10 border-[#26d4a5] shadow-xs'
+                        ? 'bg-[#1B4332]/10 border-[#1B4332] shadow-xs'
                         : 'bg-slate-50/70 border-slate-200/80 hover:bg-slate-50'
                     }`}
                   >
                     <div className="flex items-center gap-3.5">
                       <div className={`w-11 h-11 rounded-xl flex items-center justify-center font-mono font-black text-sm ${
                         isCurrent
-                          ? 'bg-[#26d4a5] text-slate-950 shadow-2xs'
+                          ? 'bg-[#1B4332] text-[#FAF7F0] shadow-2xs'
                           : 'bg-white border border-slate-200 text-slate-800'
                       }`}>
                         {patient.queueNumber}
                       </div>
                       <div>
                         <p className={`text-xs font-bold truncate max-w-[200px] ${
-                          isCurrent ? 'text-[#0fa882]' : 'text-slate-900'
+                          isCurrent ? 'text-[#1B4332]' : 'text-slate-900'
                         }`}>
                           {patient.name}
                         </p>
@@ -233,7 +270,7 @@ export default function DisplayAntreanPage() {
 
                     <span className={`text-[10px] font-bold px-3 py-1 rounded-full border ${
                       isCurrent
-                        ? 'bg-[#26d4a5]/20 text-[#0fa882] border-[#26d4a5]/30 animate-pulse'
+                        ? 'bg-[#1B4332]/15 text-[#1B4332] border-[#1B4332]/30 animate-pulse'
                         : 'bg-white text-slate-500 border-slate-200'
                     }`}>
                       {isCurrent ? 'Diperiksa' : 'Menunggu'}
@@ -246,8 +283,8 @@ export default function DisplayAntreanPage() {
 
           {/* Banner Informasi & Etika Ruang Tunggu */}
           <div className="bg-white border border-slate-200 rounded-2xl p-4 flex items-center gap-3.5 shadow-xs">
-            <div className="w-10 h-10 rounded-xl bg-[#26d4a5]/15 border border-[#26d4a5]/30 text-[#20b88f] flex items-center justify-center text-sm shrink-0">
-              <i className="fa-solid fa-circle-info" />
+            <div className="w-10 h-10 rounded-xl bg-[#1B4332]/10 border border-[#1B4332]/30 text-[#2D6A4F] flex items-center justify-center text-sm shrink-0">
+              <AppIcon name="circle-info" />
             </div>
             <div className="text-xs">
               <h4 className="font-bold text-slate-800">Petunjuk Pasien</h4>
@@ -262,8 +299,8 @@ export default function DisplayAntreanPage() {
       {/* FOOTER: Teks Berjalan Pengumuman (Bebas Error Marquee) */}
       <footer className="bg-white border border-slate-200 rounded-2xl px-6 py-3 shadow-xs">
         <div className="flex items-center text-xs font-medium text-slate-600 overflow-hidden">
-          <span className="text-[#0fa882] font-bold mr-4 flex items-center gap-1.5 shrink-0 z-10 bg-white pr-2">
-            <i className="fa-solid fa-bullhorn" /> Pengumuman:
+          <span className="text-[#1B4332] font-bold mr-4 flex items-center gap-1.5 shrink-0 z-10 bg-white pr-2">
+            <AppIcon name="bullhorn" /> Pengumuman:
           </span>
           <div className="whitespace-nowrap overflow-hidden w-full">
             <p className="inline-block animate-marquee pl-[100%] text-slate-600">

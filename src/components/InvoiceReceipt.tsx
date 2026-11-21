@@ -9,7 +9,16 @@ export interface InvoiceData {
   rmNumber: string;
   doctorName: string;
   treatments: Treatment[];
+  subtotal?: number;
+  discountAmount?: number;
+  discountNote?: string;
   total: number;
+  paidAmount?: number;
+  remainingAmount?: number;
+  status?: 'PAID' | 'PARTIAL' | 'VOID';
+  paymentMethod?: 'Tunai' | 'QRIS' | 'Debit/Transfer';
+  cashGiven?: number;
+  change?: number;
 }
 
 interface InvoiceReceiptProps {
@@ -17,6 +26,18 @@ interface InvoiceReceiptProps {
 }
 
 export const InvoiceReceipt: React.FC<InvoiceReceiptProps> = ({ invoiceData }) => {
+  const methodLabel = invoiceData.paymentMethod || 'Menunggu Pembayaran di Kasir';
+  const subtotal = invoiceData.subtotal ?? invoiceData.total;
+  const discount = invoiceData.discountAmount ?? 0;
+  const paidNow = invoiceData.paidAmount ?? invoiceData.total;
+  const remaining = invoiceData.remainingAmount ?? Math.max(0, invoiceData.total - paidNow);
+  const statusLabel =
+    invoiceData.status === 'PARTIAL' || remaining > 0
+      ? 'CICILAN / DP'
+      : invoiceData.paymentMethod
+      ? 'LUNAS'
+      : 'BELUM BAYAR';
+
   return (
     <aside
       aria-label="Struk Kasir Termal"
@@ -65,24 +86,58 @@ export const InvoiceReceipt: React.FC<InvoiceReceiptProps> = ({ invoiceData }) =
         ))}
       </div>
 
-      <div className="py-2 border-b border-dashed border-black space-y-1 text-[11px]">
-        <div className="flex justify-between font-bold">
-          <span>TOTAL BIAYA:</span>
+      <div className="py-2 border-b border-dashed border-black space-y-1 text-[10px]">
+        {discount > 0 && (
+          <>
+            <div className="flex justify-between">
+              <span>Subtotal:</span>
+              <span>Rp {subtotal.toLocaleString('id-ID')}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Diskon{invoiceData.discountNote ? ` (${invoiceData.discountNote})` : ''}:</span>
+              <span>- Rp {discount.toLocaleString('id-ID')}</span>
+            </div>
+          </>
+        )}
+        <div className="flex justify-between font-bold text-[11px]">
+          <span>TOTAL TAGIHAN:</span>
           <span>Rp {invoiceData.total.toLocaleString('id-ID')}</span>
         </div>
-        <div className="flex justify-between text-[10px]">
-          <span>Metode Bayar:</span>
-          <span>QRIS / Transfer</span>
+        <div className="flex justify-between">
+          <span>Dibayar:</span>
+          <span className="font-bold">Rp {paidNow.toLocaleString('id-ID')}</span>
         </div>
-        <div className="flex justify-between text-[10px]">
+        {remaining > 0 && (
+          <div className="flex justify-between font-bold">
+            <span>SISA TAGIHAN:</span>
+            <span>Rp {remaining.toLocaleString('id-ID')}</span>
+          </div>
+        )}
+        <div className="flex justify-between">
+          <span>Metode Bayar:</span>
+          <span>{methodLabel}</span>
+        </div>
+        {invoiceData.paymentMethod === 'Tunai' && typeof invoiceData.cashGiven === 'number' && (
+          <>
+            <div className="flex justify-between">
+              <span>Uang Diterima:</span>
+              <span>Rp {invoiceData.cashGiven.toLocaleString('id-ID')}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Kembalian:</span>
+              <span>Rp {(invoiceData.change || 0).toLocaleString('id-ID')}</span>
+            </div>
+          </>
+        )}
+        <div className="flex justify-between">
           <span>Status:</span>
-          <span className="font-bold">LUNAS</span>
+          <span className="font-bold">{statusLabel}</span>
         </div>
       </div>
 
       <div className="pt-3 text-center text-[9px] space-y-0.5">
         <p>Terima kasih atas kunjungan Anda.</p>
-        <p>Lekas sembuh & senyum sehat selalu.</p>
+        <p>Lekas sembuh &amp; senyum sehat selalu.</p>
         <p className="font-bold">Simpan struk ini sebagai bukti pembayaran resmi.</p>
       </div>
     </aside>

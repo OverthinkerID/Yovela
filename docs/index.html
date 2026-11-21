@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Yovela Dental Clinic — Klinik Gigi Modern Semarang</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Poppins', sans-serif; background-color: #F5F1E8; color: #1B4332; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased">
+  <!-- Floating Navbar -->
+  <header class="sticky top-3 z-40 px-4">
+    <div class="max-w-7xl mx-auto bg-[#FAF7F0]/90 backdrop-blur-xl border border-[#DED6C5] rounded-2xl px-5 py-3 shadow-sm flex items-center justify-between gap-4">
+      <a href="#" class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-[#1B4332] flex items-center justify-center">
+          <svg viewBox="0 0 512 512" class="w-5 h-5 fill-[#FAF7F0]">
+            <path d="M416 112c-35.3 0-64 28.7-64 64v51.2c0 23.4-12.2 44.9-32.3 56.8L272 312.6l-47.7-28.6c-20.1-12-32.3-33.5-32.3-56.8V176c0-35.3-28.7-64-64-64S64 140.7 64 176c0 86.8 52.3 162.7 128 193.3V432c0 17.7 14.3 32 32 32h64c17.7 0 32-14.3 32-32V369.3c75.7-30.6 128-106.5 128-193.3c0-35.3-28.7-64-64-64z" />
+          </svg>
+        </div>
+        <div>
+          <span class="font-extrabold text-sm text-[#1B4332] block leading-none">Yovela Dental Clinic</span>
+          <span class="text-[10px] text-[#52796F] font-semibold">Perawatan Gigi Modern &amp; Terpercaya</span>
+        </div>
+      </a>
+      <nav class="hidden md:flex items-center gap-6 text-xs font-bold text-[#2D6A4F]">
+        <a href="#profil" class="hover:text-[#E63946] transition">Profil Klinik</a>
+        <a href="#dokter" class="hover:text-[#E63946] transition">Dokter</a>
+        <a href="#layanan" class="hover:text-[#E63946] transition">Layanan</a>
+        <a href="#testimoni" class="hover:text-[#E63946] transition">Testimoni</a>
+        <a href="#booking" class="hover:text-[#E63946] transition">Booking Online</a>
+      </nav>
+      <a href="#booking" class="px-4 py-2 rounded-xl bg-[#E63946] hover:bg-[#D62828] text-white text-xs font-bold shadow-sm transition">
+        Buat Janji
+      </a>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-12 pb-16">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+      <div class="lg:col-span-7 space-y-6">
+        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1B4332]/10 border border-[#1B4332]/20 text-[#1B4332] text-xs font-bold">
+          <span class="w-2 h-2 rounded-full bg-[#E63946]"></span>
+          <span>Rekam Medis Digital FDI &amp; Integrasi SATUSEHAT Kemenkes RI</span>
+        </div>
+        <h1 class="text-3xl sm:text-5xl font-black text-[#1B4332] leading-tight">
+          Senyum Sehat &amp; Nyaman Bersama <span class="text-[#E63946]">Yovela Dental Clinic</span>
+        </h1>
+        <p class="text-sm sm:text-base text-[#3A5A40] leading-relaxed max-w-2xl">
+          Klinik gigi modern di Semarang bersama <strong>drg. Yuli Kartilla Panjaitan</strong> dengan sterilisasi berstandar medis, odontogram digital transparan, serta booking jadwal cepat tanpa antre lama.
+        </p>
+        <div class="flex flex-wrap gap-3">
+          <a href="#booking" class="px-6 py-3.5 rounded-2xl bg-[#E63946] hover:bg-[#D62828] text-white font-bold text-xs sm:text-sm shadow-lg transition">Booking Jadwal Sekarang</a>
+          <a href="#layanan" class="px-6 py-3.5 rounded-2xl bg-[#1B4332] hover:bg-[#2D6A4F] text-[#FAF7F0] font-bold text-xs sm:text-sm transition">Lihat Daftar Layanan</a>
+        </div>
+      </div>
+      <div class="lg:col-span-5">
+        <div class="bg-[#1B4332] text-[#FAF7F0] rounded-[32px] p-7 shadow-2xl border border-[#2D6A4F] space-y-4">
+          <div class="flex items-center justify-between">
+            <span class="px-3 py-1 rounded-full bg-[#FAF7F0]/10 text-[10px] font-bold uppercase">Jam Operasional</span>
+            <span class="text-[11px] font-bold text-[#95D5B2]">Buka Hari Ini</span>
+          </div>
+          <div class="space-y-2 text-xs">
+            <div class="flex justify-between py-2 border-b border-white/10"><span class="text-[#B7D3C4]">Senin – Jumat</span><strong class="font-mono">09:00 – 20:00 WIB</strong></div>
+            <div class="flex justify-between py-2 border-b border-white/10"><span class="text-[#B7D3C4]">Sabtu</span><strong class="font-mono">09:00 – 17:00 WIB</strong></div>
+            <div class="flex justify-between py-2 border-b border-white/10"><span class="text-[#B7D3C4]">Alamat</span><strong>Jl. Pemuda No. 45, Semarang</strong></div>
+            <div class="flex justify-between py-2"><span class="text-[#B7D3C4]">Dokter PJ</span><strong>drg. Yuli Kartilla Panjaitan</strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Layanan -->
+  <section id="layanan" class="bg-[#FAF7F0] border-y border-[#E8E1D3] py-16 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto space-y-8">
+      <div>
+        <span class="text-[11px] font-extrabold uppercase tracking-widest text-[#E63946]">Pelayanan Gigi</span>
+        <h2 class="text-2xl sm:text-3xl font-black text-[#1B4332] mt-1">Layanan Lengkap untuk Seluruh Keluarga</h2>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5 text-xs">
+        <div class="bg-[#F5F1E8] border border-[#E8E1D3] rounded-3xl p-6 space-y-2"><strong class="text-sm block">Pemeriksaan &amp; Odontogram FDI</strong><p class="text-[#3A5A40]">Pemetaan kondisi gigi digital, rontgen periapikal, dan konsultasi preventif. Mulai Rp 100.000.</p></div>
+        <div class="bg-[#F5F1E8] border border-[#E8E1D3] rounded-3xl p-6 space-y-2"><strong class="text-sm block">Scaling &amp; Periodonsia</strong><p class="text-[#3A5A40]">Pembersihan karang gigi ultrasonik supragingival &amp; subgingival. Mulai Rp 300.000.</p></div>
+        <div class="bg-[#F5F1E8] border border-[#E8E1D3] rounded-3xl p-6 space-y-2"><strong class="text-sm block">Konservasi, Veneer &amp; Ortodonti</strong><p class="text-[#3A5A40]">Tambal komposit estetik, perawatan saluran akar, bleaching, hingga behel dengan cicilan DP.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Booking Online (Static GitHub Pages -> WhatsApp Direct Fallback) -->
+  <section id="booking" class="max-w-3xl mx-auto w-full py-16 px-4">
+    <div class="bg-[#FAF7F0] border border-[#DED6C5] rounded-3xl p-8 shadow-md space-y-4">
+      <span class="text-[11px] font-extrabold uppercase tracking-widest text-[#E63946]">Booking Online</span>
+      <h2 class="text-2xl font-black text-[#1B4332]">Reservasi Jadwal Kunjungan</h2>
+      <form id="staticBookingForm" class="space-y-3 text-xs">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <input id="bName" required placeholder="Nama Lengkap" class="p-3 rounded-xl border border-[#DED6C5] bg-white font-semibold" />
+          <input id="bPhone" required placeholder="Nomor WhatsApp" class="p-3 rounded-xl border border-[#DED6C5] bg-white font-mono" />
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <input id="bDate" type="date" required class="p-3 rounded-xl border border-[#DED6C5] bg-white font-semibold" />
+          <input id="bService" required value="Konsultasi & Pemeriksaan Gigi" class="p-3 rounded-xl border border-[#DED6C5] bg-white" />
+        </div>
+        <button type="submit" class="w-full py-3.5 rounded-2xl bg-[#E63946] hover:bg-[#D62828] text-white font-bold cursor-pointer">
+          Kirim Booking via WhatsApp Klinik
+        </button>
+      </form>
+    </div>
+  </section>
+
+  <!-- ElectronJS-Style Architectural Footer -->
+  <footer class="bg-[#0E261C] text-[#D8E8DF] border-t border-[#2D6A4F]/50 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 grid grid-cols-1 md:grid-cols-4 gap-8 text-xs">
+      <div class="space-y-2">
+        <strong class="text-base text-[#FAF7F0] block">Yovela Dental Clinic</strong>
+        <p class="text-[#A3C9B5]">Klinik gigi modern dengan rekam medis digital FDI &amp; SATUSEHAT Ready.</p>
+      </div>
+      <div class="space-y-2">
+        <strong class="uppercase text-[#FAF7F0] block">Layanan</strong>
+        <a href="#layanan" class="block text-[#A3C9B5] hover:text-white">Scaling &amp; Preventif</a>
+        <a href="#layanan" class="block text-[#A3C9B5] hover:text-white">Konservasi &amp; PSA</a>
+        <a href="#layanan" class="block text-[#A3C9B5] hover:text-white">Ortodonti &amp; Estetika</a>
+      </div>
+      <div class="space-y-2">
+        <strong class="uppercase text-[#FAF7F0] block">Klinik</strong>
+        <a href="#profil" class="block text-[#A3C9B5] hover:text-white">Tentang Kami</a>
+        <a href="#booking" class="block text-[#A3C9B5] hover:text-white">Booking Online</a>
+      </div>
+      <div class="space-y-2">
+        <strong class="uppercase text-[#FAF7F0] block">Kontak</strong>
+        <p class="text-[#A3C9B5]">Jl. Pemuda No. 45, Semarang</p>
+        <p class="text-[#A3C9B5] font-mono">(024) 8765-4321</p>
+      </div>
+    </div>
+    <div class="border-t border-[#1B4332] bg-[#0A1C15] py-4 text-center text-[11px] text-[#8FB8A3]">
+      © 2026 Yovela Dental Clinic. All Rights Reserved.
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('staticBookingForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var name = document.getElementById('bName').value;
+      var phone = document.getElementById('bPhone').value;
+      var date = document.getElementById('bDate').value;
+      var service = document.getElementById('bService').value;
+      var msg = encodeURIComponent('Halo Yovela Dental Clinic, saya ' + name + ' (' + phone + ') ingin booking jadwal ' + service + ' pada tanggal ' + date + '.');
+      window.open('https://wa.me/6281234567890?text=' + msg, '_blank');
+    });
+  </script>
+</body>
+</html>

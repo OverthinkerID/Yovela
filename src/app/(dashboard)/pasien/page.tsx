@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { AppIcon } from "@/components/AppIcon";
 import Link from 'next/link';
 import { 
   getStoredPatients, 
@@ -39,20 +40,23 @@ export default function PendaftaranPasienPage() {
   const [nextQueueNumber, setNextQueueNumber] = useState('A-01');
   const [nextRmNumber, setNextRmNumber] = useState('RM-20260001');
 
-  // Muat data saat halaman dibuka
-  useEffect(() => {
-    const list = getStoredPatients();
-    setPatients(list);
-    calculateNextNumbers(list);
-  }, []);
-
-  const calculateNextNumbers = (list: PatientRecord[]) => {
-    const total = list.length + 1;
-    const qNum = `A-${String(total).padStart(2, '0')}`;
-    const rmNum = `RM-2026${String(total).padStart(4, '0')}`;
-    setNextQueueNumber(qNum);
-    setNextRmNumber(rmNum);
+  // Muat data dari database via API
+  const refreshPatients = async () => {
+    try {
+      const res = await fetch('/api/patients', { cache: 'no-store' });
+      if (!res.ok) return;
+      const data = await res.json();
+      setPatients(data.patients || []);
+      if (data.meta?.nextQueueNumber) setNextQueueNumber(data.meta.nextQueueNumber);
+      if (data.meta?.nextRmNumber) setNextRmNumber(data.meta.nextRmNumber);
+    } catch (err) {
+      console.error('Gagal memuat daftar pasien:', err);
+    }
   };
+
+  useEffect(() => {
+    refreshPatients();
+  }, []);
 
   // Kalkulasi usia otomatis dari tanggal lahir
   const handleBirthDateChange = (val: string) => {
@@ -68,80 +72,85 @@ export default function PendaftaranPasienPage() {
     setAge(String(calculatedAge >= 0 ? calculatedAge : 0));
   };
 
-  // Simpan Pasien Baru ke Database
-  const handleRegisterNewPatient = (e: React.FormEvent) => {
+  // Simpan Pasien Baru ke Database via API
+  const handleRegisterNewPatient = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
 
     const parsedAge = parseInt(age, 10);
     const finalAllergies = hasAllergy && allergies.trim() !== '' ? allergies.trim() : 'Tidak Ada';
 
-    const newRecord: PatientRecord = {
-      id: `P-${Date.now()}`,
-      queueNumber: nextQueueNumber,
-      name: name.trim(),
-      rmNumber: nextRmNumber,
-      nik: nik.trim() || '3301000000000000',
-      birthDate: birthDate || '2000-01-01',
-      age: isNaN(parsedAge) ? 25 : parsedAge,
-      gender,
-      phone: phone.trim() || '0812-0000-0000',
-      address: address.trim() || 'Jl. Pemuda No. 1, Semarang',
-      allergies: finalAllergies,
-      registrationDate: new Date().toISOString().split('T')[0],
-      statusKunjungan: 'Menunggu',
-      registeredBy: activeStaffName,
-      initialOdontogram: {},
-      lastSoap: {
-        subjective: complaint.trim() || 'Pemeriksaan rutin kesehatan gigi & mulut.',
-        objective: 'Pemeriksaan intraoral awal saat registrasi.',
-        diagnosisIcd10: 'K02.1',
-        suggestedTreatments: ['TRX-01'],
-      },
-    };
+    try {
+      const res = await fetch('/api/patients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name.trim(),
+          nik: nik.trim(),
+          birthDate: birthDate || undefined,
+          age: isNaN(parsedAge) ? 25 : parsedAge,
+          gender,
+          phone: phone.trim(),
+          address: address.trim(),
+          allergies: finalAllergies,
+          complaint: complaint.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setToastMessage(data.error || 'Gagal mendaftarkan pasien baru.');
+        setTimeout(() => setToastMessage(''), 4000);
+        return;
+      }
 
-    const updated = [newRecord, ...patients];
-    setPatients(updated);
-    saveStoredPatients(updated);
-    setActivePatient(newRecord);
+      const newRecord: PatientRecord = data.patient;
+      setActivePatient(newRecord);
+      setTicketModalData(newRecord);
+      setToastMessage(`Pasien ${newRecord.name} berhasil terdaftar dengan antrean ${newRecord.queueNumber}`);
+      setTimeout(() => setToastMessage(''), 4000);
 
-    // Tampilkan Modal Tiket & Notifikasi
-    setTicketModalData(newRecord);
-    setToastMessage(`Pasien ${newRecord.name} berhasil terdaftar dengan antrean ${newRecord.queueNumber}`);
-    setTimeout(() => setToastMessage(''), 4000);
-
-    // Reset Form
-    setName('');
-    setNik('');
-    setBirthDate('');
-    setAge('');
-    setPhone('');
-    setAddress('');
-    setAllergies('Tidak Ada');
-    setHasAllergy(false);
-    setComplaint('');
-    calculateNextNumbers(updated);
+      // Reset Form & Muat Ulang Daftar
+      setName('');
+      setNik('');
+      setBirthDate('');
+      setAge('');
+      setPhone('');
+      setAddress('');
+      setAllergies('Tidak Ada');
+      setHasAllergy(false);
+      setComplaint('');
+      await refreshPatients();
+    } catch {
+      setToastMessage('Gagal terhubung ke server database.');
+      setTimeout(() => setToastMessage(''), 4000);
+    }
   };
 
-  // Daftarkan Ulang Pasien Lama
-  const handleRequeueExistingPatient = (patient: PatientRecord) => {
-    const updatedPatient: PatientRecord = {
-      ...patient,
-      queueNumber: nextQueueNumber,
-      statusKunjungan: 'Menunggu',
-      registrationDate: new Date().toISOString().split('T')[0],
-      registeredBy: activeStaffName,
-    };
+  // Daftarkan Ulang Pasien Lama (Membuat Encounter Baru di Database)
+  const handleRequeueExistingPatient = async (patient: PatientRecord) => {
+    try {
+      const res = await fetch('/api/encounters', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ patientId: patient.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setToastMessage(data.error || 'Gagal menerbitkan antrean pasien lama.');
+        setTimeout(() => setToastMessage(''), 4000);
+        return;
+      }
 
-    const updated = patients.map((p) => p.id === patient.id ? updatedPatient : p);
-    setPatients(updated);
-    saveStoredPatients(updated);
-    setActivePatient(updatedPatient);
-
-    setTicketModalData(updatedPatient);
-    setToastMessage(`Antrean ${nextQueueNumber} diterbitkan untuk ${patient.name}`);
-    setTimeout(() => setToastMessage(''), 4000);
-    calculateNextNumbers(updated);
+      const updatedPatient: PatientRecord = data.patient;
+      setActivePatient(updatedPatient);
+      setTicketModalData(updatedPatient);
+      setToastMessage(`Antrean ${updatedPatient.queueNumber} diterbitkan untuk ${updatedPatient.name}`);
+      setTimeout(() => setToastMessage(''), 4000);
+      await refreshPatients();
+    } catch {
+      setToastMessage('Gagal terhubung ke server database.');
+      setTimeout(() => setToastMessage(''), 4000);
+    }
   };
 
   // Filter Pasien Terdaftar
@@ -158,13 +167,13 @@ export default function PendaftaranPasienPage() {
   const inProgressCount = patients.filter((p) => p.statusKunjungan === 'Sedang Diperiksa').length;
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-800 font-['Poppins',sans-serif] flex flex-col antialiased pb-12 w-full">
+    <div className="min-h-screen bg-[#F5F1E8] text-slate-800 font-['Poppins',sans-serif] flex flex-col antialiased pb-12 w-full">
       
       {/* TOAST SUKSES MENGAMBANG */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 bg-slate-900/95 backdrop-blur-md text-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-3 duration-200 border border-slate-700 text-xs font-semibold">
-          <div className="w-6 h-6 rounded-full bg-[#26d4a5] text-slate-950 flex items-center justify-center text-xs">
-            <i className="fa-solid fa-check" />
+          <div className="w-6 h-6 rounded-full bg-[#1B4332] text-[#FAF7F0] flex items-center justify-center text-xs">
+            <AppIcon name="check" />
           </div>
           <span>{toastMessage}</span>
         </div>
@@ -180,11 +189,11 @@ export default function PendaftaranPasienPage() {
               onClick={() => setMode('baru')}
               className={`flex-1 sm:flex-none px-5 py-2 rounded-xl transition duration-150 flex items-center justify-center gap-2 cursor-pointer ${
                 mode === 'baru'
-                  ? 'bg-[#26d4a5] text-slate-950 shadow-xs'
+                  ? 'bg-[#1B4332] text-[#FAF7F0] shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <i className="fa-solid fa-user-plus text-xs" />
+              <AppIcon name="user-plus" className="text-xs" />
               <span>Registrasi Pasien Baru</span>
             </button>
             <button
@@ -192,11 +201,11 @@ export default function PendaftaranPasienPage() {
               onClick={() => setMode('lama')}
               className={`flex-1 sm:flex-none px-5 py-2 rounded-xl transition duration-150 flex items-center justify-center gap-2 cursor-pointer ${
                 mode === 'lama'
-                  ? 'bg-[#26d4a5] text-slate-950 shadow-xs'
+                  ? 'bg-[#1B4332] text-[#FAF7F0] shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <i className="fa-solid fa-magnifying-glass text-xs" />
+              <AppIcon name="magnifying-glass" className="text-xs" />
               <span>Cari Pasien Terdaftar ({patients.length})</span>
             </button>
           </div>
@@ -210,7 +219,7 @@ export default function PendaftaranPasienPage() {
               </span>
             </div>
             <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200/80 px-3 py-1.5 rounded-xl">
-              <span className="w-2 h-2 rounded-full bg-[#26d4a5]" />
+              <span className="w-2 h-2 rounded-full bg-[#1B4332]" />
               <span className="text-emerald-900 font-semibold text-[11px]">
                 Sedang Diperiksa: <strong>{inProgressCount}</strong>
               </span>
@@ -229,8 +238,8 @@ export default function PendaftaranPasienPage() {
               <form onSubmit={handleRegisterNewPatient} className="bg-white rounded-3xl border border-slate-200/90 shadow-xs p-6 space-y-5 animate-in fade-in duration-150">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-[#26d4a5]/15 text-[#20b88f] flex items-center justify-center text-xs shadow-2xs">
-                      <i className="fa-solid fa-address-card" />
+                    <div className="w-8 h-8 rounded-xl bg-[#1B4332]/10 text-[#2D6A4F] flex items-center justify-center text-xs shadow-2xs">
+                      <AppIcon name="address-card" />
                     </div>
                     <div>
                       <h2 className="text-sm font-bold text-slate-900">Formulir Rekam Medis Pasien Baru</h2>
@@ -239,7 +248,7 @@ export default function PendaftaranPasienPage() {
                   </div>
                   <div className="bg-slate-50 border border-slate-200 px-3 py-1 rounded-xl text-right">
                     <span className="text-[9px] text-slate-400 font-bold block uppercase">No. RM Terbit</span>
-                    <span className="font-mono font-black text-xs text-[#0fa882]">{nextRmNumber}</span>
+                    <span className="font-mono font-black text-xs text-[#1B4332]">{nextRmNumber}</span>
                   </div>
                 </div>
 
@@ -254,7 +263,7 @@ export default function PendaftaranPasienPage() {
                       placeholder="Contoh: Ny. Rina Anggraini, S.Kom."
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 font-semibold focus:outline-none focus:border-[#26d4a5] focus:bg-white transition"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 font-semibold focus:outline-none focus:border-[#1B4332] focus:bg-white transition"
                     />
                   </div>
 
@@ -269,10 +278,10 @@ export default function PendaftaranPasienPage() {
                         placeholder="Contoh: 3301012345670001"
                         value={nik}
                         onChange={(e) => setNik(e.target.value.replace(/\D/g, ''))}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 font-mono focus:outline-none focus:border-[#26d4a5] focus:bg-white transition"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 font-mono focus:outline-none focus:border-[#1B4332] focus:bg-white transition"
                       />
                       {nik.length === 16 && (
-                        <i className="fa-solid fa-circle-check text-emerald-500 absolute right-3 top-3 text-xs" />
+                        <AppIcon name="circle-check" className="text-emerald-500 absolute right-3 top-3 text-xs" />
                       )}
                     </div>
                   </div>
@@ -287,7 +296,7 @@ export default function PendaftaranPasienPage() {
                       placeholder="0812-3456-7890"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 focus:outline-none focus:border-[#26d4a5] focus:bg-white transition"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 focus:outline-none focus:border-[#1B4332] focus:bg-white transition"
                     />
                   </div>
 
@@ -299,7 +308,7 @@ export default function PendaftaranPasienPage() {
                       type="date"
                       value={birthDate}
                       onChange={(e) => handleBirthDateChange(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-800 focus:outline-none focus:border-[#26d4a5] focus:bg-white transition cursor-pointer"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-800 focus:outline-none focus:border-[#1B4332] focus:bg-white transition cursor-pointer"
                     />
                   </div>
 
@@ -315,7 +324,7 @@ export default function PendaftaranPasienPage() {
                         placeholder="Thn"
                         value={age}
                         onChange={(e) => setAge(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-bold focus:outline-none focus:border-[#26d4a5] focus:bg-white transition"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-bold focus:outline-none focus:border-[#1B4332] focus:bg-white transition"
                       />
                     </div>
                     <div>
@@ -358,14 +367,14 @@ export default function PendaftaranPasienPage() {
                       placeholder="Nama jalan, perumahan, kelurahan / kecamatan..."
                       value={address}
                       onChange={(e) => setAddress(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 focus:outline-none focus:border-[#26d4a5] focus:bg-white transition"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 focus:outline-none focus:border-[#1B4332] focus:bg-white transition"
                     />
                   </div>
 
                   <div className="sm:col-span-2 bg-slate-50 p-3 rounded-2xl border border-slate-200/80 space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-slate-700 flex items-center gap-1.5">
-                        <i className="fa-solid fa-triangle-exclamation text-amber-500" />
+                        <AppIcon name="triangle-exclamation" className="text-amber-500" />
                         Apakah Pasien Memiliki Riwayat Alergi Obat?
                       </span>
                       <button
@@ -405,22 +414,22 @@ export default function PendaftaranPasienPage() {
                       placeholder="Contoh: Gigi belakang kanan bawah ngilu berdenyut sejak 2 hari yang lalu..."
                       value={complaint}
                       onChange={(e) => setComplaint(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 focus:outline-none focus:border-[#26d4a5] focus:bg-white transition"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 focus:outline-none focus:border-[#1B4332] focus:bg-white transition"
                     />
                   </div>
                 </div>
 
                 <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
                   <span className="text-[11px] text-slate-500 flex items-center gap-1.5">
-                    <i className="fa-solid fa-user-check text-[#0fa882]" />
+                    <AppIcon name="user-check" className="text-[#1B4332]" />
                     <span>Petugas Pendaftar: <strong className="text-slate-800">{activeStaffName}</strong></span>
                   </span>
 
                   <button
                     type="submit"
-                    className="px-6 py-3 rounded-2xl bg-[#26d4a5] hover:bg-[#20b88f] text-slate-950 font-bold text-xs shadow-md shadow-[#26d4a5]/20 transition cursor-pointer flex items-center gap-2 active:scale-98"
+                    className="px-6 py-3 rounded-2xl bg-[#E63946] hover:bg-[#D62828] text-white font-bold text-xs shadow-md shadow-[#26d4a5]/20 transition cursor-pointer flex items-center gap-2 active:scale-98"
                   >
-                    <i className="fa-solid fa-ticket text-xs" />
+                    <AppIcon name="ticket" className="text-xs" />
                     <span>Daftarkan Pasien & Terbitkan Tiket</span>
                   </button>
                 </div>
@@ -439,9 +448,9 @@ export default function PendaftaranPasienPage() {
                       placeholder="Cari Nama, No RM, atau NIK..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-[#26d4a5] focus:bg-white transition"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-[#1B4332] focus:bg-white transition"
                     />
-                    <i className="fa-solid fa-magnifying-glass text-slate-400 text-xs absolute left-3 top-3" />
+                    <AppIcon name="magnifying-glass" className="text-slate-400 text-xs absolute left-3 top-3" />
                   </div>
                 </div>
 
@@ -454,10 +463,10 @@ export default function PendaftaranPasienPage() {
                     filteredPatients.map((patient) => (
                       <div
                         key={patient.id}
-                        className="p-4 rounded-2xl border border-slate-200 bg-slate-50/60 hover:bg-slate-50 hover:border-[#26d4a5]/70 transition duration-150 flex flex-wrap items-center justify-between gap-3"
+                        className="p-4 rounded-2xl border border-slate-200 bg-slate-50/60 hover:bg-slate-50 hover:border-[#1B4332]/70 transition duration-150 flex flex-wrap items-center justify-between gap-3"
                       >
                         <div className="flex items-center gap-3.5">
-                          <div className="w-11 h-11 rounded-2xl bg-white border border-slate-200 flex flex-col items-center justify-center font-mono font-bold text-xs text-[#0fa882] shadow-2xs">
+                          <div className="w-11 h-11 rounded-2xl bg-white border border-slate-200 flex flex-col items-center justify-center font-mono font-bold text-xs text-[#1B4332] shadow-2xs">
                             <span className="text-[8px] text-slate-400">NO</span>
                             <span>{patient.queueNumber}</span>
                           </div>
@@ -485,9 +494,9 @@ export default function PendaftaranPasienPage() {
                           <button
                             type="button"
                             onClick={() => handleRequeueExistingPatient(patient)}
-                            className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:border-[#26d4a5] hover:text-[#0fa882] text-slate-700 text-xs font-bold transition shadow-2xs cursor-pointer flex items-center gap-1.5"
+                            className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:border-[#1B4332] hover:text-[#1B4332] text-slate-700 text-xs font-bold transition shadow-2xs cursor-pointer flex items-center gap-1.5"
                           >
-                            <i className="fa-solid fa-clock-rotate-left text-[11px]" />
+                            <AppIcon name="clock-rotate-left" className="text-[11px]" />
                             <span>Terbitkan Antrean Hari Ini</span>
                           </button>
                         </div>
@@ -502,16 +511,16 @@ export default function PendaftaranPasienPage() {
           {/* KOLOM KANAN (5 Kolom): TIKET PRATINJAU DINAMIS & PANDUAN PETUGAS */}
           <div className="lg:col-span-5 space-y-4">
             <div className="bg-white rounded-3xl border border-slate-200/90 shadow-md p-6 relative overflow-hidden">
-              <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-[#26d4a5]/10 pointer-events-none" />
+              <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-[#1B4332]/10 pointer-events-none" />
 
               <div className="flex items-center justify-between border-b border-dashed border-slate-200 pb-3 mb-4">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-xl bg-[#26d4a5]/15 text-[#20b88f] flex items-center justify-center text-xs">
-                    <i className="fa-solid fa-ticket" />
+                  <div className="w-7 h-7 rounded-xl bg-[#1B4332]/10 text-[#2D6A4F] flex items-center justify-center text-xs">
+                    <AppIcon name="ticket" />
                   </div>
                   <h3 className="font-bold text-xs uppercase tracking-wider text-slate-700">Tiket Pendaftaran Poli</h3>
                 </div>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#26d4a5]/15 text-[#0fa882]">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#1B4332]/10 text-[#1B4332]">
                   {ticketModalData ? 'TERBIT HARI INI' : 'CALON ANTREAN'}
                 </span>
               </div>
@@ -520,7 +529,7 @@ export default function PendaftaranPasienPage() {
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block mb-1">
                   Nomor Panggilan Pasien
                 </span>
-                <h2 className="text-5xl font-black font-mono text-[#0fa882] tracking-tight">
+                <h2 className="text-5xl font-black font-mono text-[#1B4332] tracking-tight">
                   {ticketModalData?.queueNumber || nextQueueNumber}
                 </h2>
                 <p className="text-xs font-bold text-slate-800 mt-2 truncate px-3">
@@ -542,7 +551,7 @@ export default function PendaftaranPasienPage() {
                 </div>
                 <div className="flex justify-between py-1.5 border-b border-slate-100">
                   <span className="text-slate-400">Petugas Pendaftar:</span>
-                  <span className="font-semibold text-[#0fa882] truncate max-w-[180px]">
+                  <span className="font-semibold text-[#1B4332] truncate max-w-[180px]">
                     {ticketModalData?.registeredBy || activeStaffName}
                   </span>
                 </div>
@@ -565,7 +574,7 @@ export default function PendaftaranPasienPage() {
                   }}
                   className="flex-1 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
                 >
-                  <i className="fa-solid fa-print text-xs" />
+                  <AppIcon name="print" className="text-xs" />
                   <span>Cetak Tiket Antrean</span>
                 </button>
                 <Link
@@ -573,15 +582,15 @@ export default function PendaftaranPasienPage() {
                   target="_blank"
                   className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer shadow-xs"
                 >
-                  <i className="fa-solid fa-tv text-xs text-[#26d4a5]" />
+                  <AppIcon name="tv" className="text-xs text-[#2D6A4F]" />
                   <span>Display TV</span>
                 </Link>
               </div>
             </div>
 
-            <div className="bg-[#26d4a5]/10 border border-[#26d4a5]/30 rounded-3xl p-4 flex items-start gap-3.5">
-              <div className="w-8 h-8 rounded-xl bg-[#26d4a5]/20 text-[#0fa882] flex items-center justify-center text-sm shrink-0 mt-0.5 shadow-2xs">
-                <i className="fa-solid fa-cloud-arrow-up" />
+            <div className="bg-[#1B4332]/10 border border-[#1B4332]/30 rounded-3xl p-4 flex items-start gap-3.5">
+              <div className="w-8 h-8 rounded-xl bg-[#1B4332]/15 text-[#1B4332] flex items-center justify-center text-sm shrink-0 mt-0.5 shadow-2xs">
+                <AppIcon name="cloud-arrow-up" />
               </div>
               <div className="text-xs">
                 <h4 className="font-bold text-slate-800">Sinkronisasi SATUSEHAT Kemenkes</h4>
