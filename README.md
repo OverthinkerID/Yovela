@@ -80,6 +80,6 @@
 ## Instalasi Lokal
 
 ```bash
-git clone [https://github.com/OverthinkerID/Yovela.git](https://github.com/OverthinkerID/Yovela.git)
+git clone https://github.com/OverthinkerID/Yovela.git
 cd Yovela
 npm install

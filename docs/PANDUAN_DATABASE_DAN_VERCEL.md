@@ -1,4 +1,3 @@
-```markdown
 <div align="center">
 
 # Panduan Setup Database Cloud & Deploy ke Vercel
