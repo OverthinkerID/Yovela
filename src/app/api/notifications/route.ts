@@ -29,7 +29,7 @@ async function getReadIds(userId: string): Promise<string[]> {
 }
 
 export async function GET() {
-  const { user, errorResponse } = await requireAuth(['DOKTER', 'PENDAFTARAN', 'KASIR']);
+  const { user, errorResponse } = await requireAuth(['DOKTER', 'DOKTER_LAIN', 'PENDAFTARAN', 'KASIR']);
   if (errorResponse) return errorResponse;
 
   const [
@@ -176,7 +176,7 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
-  const { user, errorResponse } = await requireAuth(['DOKTER', 'PENDAFTARAN', 'KASIR']);
+  const { user, errorResponse } = await requireAuth(['DOKTER', 'DOKTER_LAIN', 'PENDAFTARAN', 'KASIR']);
   if (errorResponse) return errorResponse;
 
   try {

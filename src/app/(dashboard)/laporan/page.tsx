@@ -435,45 +435,45 @@ export default function LaporanKeuanganPage() {
         <>
           <section className="bg-white border-b border-slate-200/80 px-4 sm:px-6 lg:px-8 xl:px-10 py-4 shadow-2xs print:hidden">
             <div className="max-w-[1440px] w-full mx-auto space-y-4">
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-3.5">
-                <div className="col-span-2 sm:col-span-1 p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-3.5 items-stretch">
+                <div className="col-span-2 sm:col-span-1 h-full flex flex-col justify-between p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200">
                   <span className="text-[10px] uppercase font-bold text-emerald-800 tracking-wider">Kas Masuk Aktual</span>
                   <h3 className="text-xl font-black font-mono text-emerald-700 mt-1">
                     Rp {summary.totalOmset.toLocaleString('id-ID')}
                   </h3>
-                  <p className="text-[10px] text-emerald-600 mt-0.5">{summary.count} Transaksi Terbayar</p>
+                  <p className="text-[10px] text-emerald-600 mt-auto pt-1">{summary.count} Transaksi Terbayar</p>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200">
+                <div className="h-full flex flex-col justify-between p-4 rounded-2xl bg-amber-50/70 border border-amber-200">
                   <span className="text-[10px] uppercase font-bold text-amber-800 tracking-wider">Piutang Cicilan</span>
                   <h3 className="text-xl font-black font-mono text-amber-700 mt-1">
                     Rp {summary.totalPiutang.toLocaleString('id-ID')}
                   </h3>
-                  <p className="text-[10px] text-amber-700 mt-0.5">Sisa belum dilunasi</p>
+                  <p className="text-[10px] text-amber-700 mt-auto pt-1">Sisa belum dilunasi</p>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                <div className="h-full flex flex-col justify-between p-4 rounded-2xl bg-slate-50 border border-slate-200">
                   <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Metode QRIS</span>
                   <h3 className="text-lg font-bold font-mono text-slate-800 mt-1">
                     Rp {summary.qrisTotal.toLocaleString('id-ID')}
                   </h3>
-                  <p className="text-[10px] text-slate-400 mt-0.5">Non-Tunai QRIS</p>
+                  <p className="text-[10px] text-slate-400 mt-auto pt-1">Non-Tunai QRIS</p>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                <div className="h-full flex flex-col justify-between p-4 rounded-2xl bg-slate-50 border border-slate-200">
                   <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Metode Tunai</span>
                   <h3 className="text-lg font-bold font-mono text-slate-800 mt-1">
                     Rp {summary.cashTotal.toLocaleString('id-ID')}
                   </h3>
-                  <p className="text-[10px] text-slate-400 mt-0.5">Kas Fisik Kasir</p>
+                  <p className="text-[10px] text-slate-400 mt-auto pt-1">Kas Fisik Kasir</p>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                <div className="h-full flex flex-col justify-between p-4 rounded-2xl bg-slate-50 border border-slate-200">
                   <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Debit / Transfer</span>
                   <h3 className="text-lg font-bold font-mono text-slate-800 mt-1">
                     Rp {summary.transferTotal.toLocaleString('id-ID')}
                   </h3>
-                  <p className="text-[10px] text-slate-400 mt-0.5">Bank / EDC</p>
+                  <p className="text-[10px] text-slate-400 mt-auto pt-1">Bank / EDC</p>
                 </div>
               </div>
 
@@ -715,28 +715,28 @@ export default function LaporanKeuanganPage() {
           </div>
 
           {/* 3 KPI EKSEKUTIF P&L */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-5 rounded-3xl bg-white border border-emerald-200 shadow-xs space-y-1">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
+            <div className="h-full flex flex-col justify-between p-5 rounded-3xl bg-white border border-emerald-200 shadow-xs gap-2">
               <span className="text-[10px] uppercase font-extrabold text-emerald-700 tracking-wider">
                 Kas Masuk Aktual ({periodMode === 'BULANAN' ? selectedMonth : periodMode === 'TAHUNAN' ? selectedYear : 'Semua'})
               </span>
               <h3 className="text-2xl font-black font-mono text-[#1B4332]">
                 Rp {pnlSummary.matchedIncome.toLocaleString('id-ID')}
               </h3>
-              <p className="text-[11px] text-slate-500">Total pembayaran pasien diterima kasir</p>
+              <p className="text-[11px] text-slate-500 mt-auto">Total pembayaran pasien diterima kasir</p>
             </div>
 
-            <div className="p-5 rounded-3xl bg-white border border-rose-200 shadow-xs space-y-1">
+            <div className="h-full flex flex-col justify-between p-5 rounded-3xl bg-white border border-rose-200 shadow-xs gap-2">
               <span className="text-[10px] uppercase font-extrabold text-[#E63946] tracking-wider">
                 Total Pengeluaran Operasional
               </span>
               <h3 className="text-2xl font-black font-mono text-[#E63946]">
                 Rp {pnlSummary.totalExpenses.toLocaleString('id-ID')}
               </h3>
-              <p className="text-[11px] text-slate-500">{expenses.length} pos biaya tercatat (gaji, utilitas, bahan/alat)</p>
+              <p className="text-[11px] text-slate-500 mt-auto">{expenses.length} pos biaya tercatat (gaji, utilitas, bahan/alat)</p>
             </div>
 
-            <div className="p-5 rounded-3xl bg-[#1B4332] text-[#FAF7F0] border border-[#2D6A4F] shadow-md space-y-1">
+            <div className="h-full flex flex-col justify-between p-5 rounded-3xl bg-[#1B4332] text-[#FAF7F0] border border-[#2D6A4F] shadow-md gap-2">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] uppercase font-extrabold text-[#95D5B2] tracking-wider">
                   Laba Bersih (Net Profit)
@@ -750,7 +750,7 @@ export default function LaporanKeuanganPage() {
               <h3 className="text-2xl font-black font-mono">
                 Rp {pnlSummary.netProfit.toLocaleString('id-ID')}
               </h3>
-              <p className="text-[11px] text-[#B7D3C4]">Kas Masuk dikurangi Pengeluaran Operasional</p>
+              <p className="text-[11px] text-[#B7D3C4] mt-auto">Kas Masuk dikurangi Pengeluaran Operasional</p>
             </div>
           </div>
 

@@ -58,7 +58,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ patients: queue });
   }
 
-  const { errorResponse } = await requireAuth(['DOKTER', 'PENDAFTARAN', 'KASIR']);
+  const { errorResponse } = await requireAuth(['DOKTER', 'DOKTER_LAIN', 'PENDAFTARAN', 'KASIR']);
   if (errorResponse) return errorResponse;
 
   const patients = await prisma.patient.findMany({
@@ -86,7 +86,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const { user, errorResponse } = await requireAuth(['DOKTER', 'PENDAFTARAN']);
+  const { user, errorResponse } = await requireAuth(['DOKTER', 'DOKTER_LAIN', 'PENDAFTARAN']);
   if (errorResponse) return errorResponse;
 
   try {

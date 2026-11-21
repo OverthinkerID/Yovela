@@ -5,9 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
+    "dev:all": "npm run sync:docs && next dev",
     "build": "prisma generate && next build",
     "start": "next start",
     "postinstall": "prisma generate",
+    "build:landing": "node --import tsx scripts/sync-landing-docs.ts",
+    "export:landing": "npm run build:landing",
+    "sync:docs": "npm run build:landing",
+    "validate:docs": "node --import tsx scripts/sync-landing-docs.ts --validate",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio"

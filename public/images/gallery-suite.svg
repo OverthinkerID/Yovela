@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" fill="none">
+  <rect width="800" height="600" fill="#FAF6EE"/>
+  <rect x="60" y="60" width="680" height="480" rx="36" fill="#F3EBDD" stroke="#D5C8B0" stroke-width="2"/>
+  <path d="M160 470V240C160 151.634 231.634 80 320 80H480C568.366 80 640 151.634 640 240V470H160Z" fill="#234B38"/>
+  <rect x="275" y="165" width="250" height="145" rx="22" fill="#0E261C" stroke="#95D5B2" stroke-opacity="0.4" stroke-width="2"/>
+  <rect x="305" y="195" width="90" height="12" rx="6" fill="#95D5B2"/>
+  <rect x="305" y="220" width="170" height="10" rx="5" fill="#FAF6EE" fill-opacity="0.7"/>
+  <rect x="305" y="242" width="140" height="10" rx="5" fill="#FAF6EE" fill-opacity="0.45"/>
+  <circle cx="475" cy="265" r="22" fill="#E65B45"/>
+  <rect x="240" y="365" width="320" height="44" rx="22" fill="#FAF6EE"/>
+  <rect x="275" y="409" width="250" height="61" rx="18" fill="#E7DAC3"/>
+  <text x="400" y="512" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700" fill="#234B38" letter-spacing="1.5">TREATMENT SUITE 01</text>
+</svg>

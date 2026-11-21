@@ -300,9 +300,9 @@ export default function DashboardOverviewPage() {
         )}
 
         {/* ANALITIK OPERASIONAL & KEUANGAN AKTUAL */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
           {/* Distribusi Kunjungan & Alert Stok BHP */}
-          <div className="lg:col-span-5 yovela-card p-5 sm:p-6 space-y-4">
+          <div className="lg:col-span-5 yovela-card h-full flex flex-col p-5 sm:p-6 gap-4">
             <div className="flex items-center justify-between border-b border-[#E8E1D3] pb-3">
               <div>
                 <h2 className="text-sm font-extrabold text-[#1B4332]">Distribusi Status Pasien</h2>
@@ -330,7 +330,7 @@ export default function DashboardOverviewPage() {
               ))}
             </div>
 
-            <div className="pt-2 border-t border-[#E8E1D3]">
+            <div className="mt-auto pt-2 border-t border-[#E8E1D3]">
               {lowStockItems.length > 0 ? (
                 <Link
                   href="/stok"
@@ -359,7 +359,7 @@ export default function DashboardOverviewPage() {
           </div>
 
           {/* Tren Pendapatan 7 Hari & Metode Pembayaran */}
-          <div className="lg:col-span-7 yovela-card p-5 sm:p-6 space-y-4">
+          <div className="lg:col-span-7 yovela-card h-full flex flex-col p-5 sm:p-6 gap-4">
             <div className="flex items-center justify-between border-b border-[#E8E1D3] pb-3">
               <div>
                 <h2 className="text-sm font-extrabold text-[#1B4332]">Pendapatan 7 Hari &amp; Metode Bayar</h2>
@@ -422,9 +422,9 @@ export default function DashboardOverviewPage() {
         </div>
 
         {/* LIVE FEED ANTREAN & JADWAL BOOKING */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
           {/* Antrean Live */}
-          <div className="lg:col-span-7 yovela-card p-5 sm:p-6 space-y-4">
+          <div className="lg:col-span-7 yovela-card h-full flex flex-col p-5 sm:p-6 gap-4">
             <div className="flex items-center justify-between border-b border-[#E8E1D3] pb-3">
               <div>
                 <h2 className="text-sm font-extrabold text-[#1B4332]">Antrean Poli Hari Ini (Live)</h2>
@@ -473,7 +473,7 @@ export default function DashboardOverviewPage() {
           </div>
 
           {/* Jadwal Booking Mendatang */}
-          <div className="lg:col-span-5 yovela-card p-5 sm:p-6 space-y-4">
+          <div className="lg:col-span-5 yovela-card h-full flex flex-col p-5 sm:p-6 gap-4">
             <div className="flex items-center justify-between border-b border-[#E8E1D3] pb-3">
               <div>
                 <h2 className="text-sm font-extrabold text-[#1B4332]">Booking Janji Temu</h2>
@@ -528,7 +528,7 @@ export default function DashboardOverviewPage() {
             <h2 className="text-sm font-extrabold text-[#1B4332]">Pintasan Modul Operasional</h2>
             <p className="text-[11px] text-[#52796F]">Akses cepat seluruh fitur Yovela Dental Clinic</p>
           </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 items-stretch">
             {[
               { href: '/jadwal', icon: 'calendar-check', title: 'Jadwal Janji Temu', desc: 'Booking & WA reminder' },
               { href: '/pasien', icon: 'user-plus', title: 'Pendaftaran Pasien', desc: 'Pasien baru & kontrol' },
@@ -538,7 +538,7 @@ export default function DashboardOverviewPage() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="p-3.5 sm:p-4 rounded-2xl bg-[#F5F1E8] border border-[#E8E1D3] hover:border-[#1B4332] transition flex flex-col sm:flex-row items-start sm:items-center gap-3 group"
+                className="h-full p-3.5 sm:p-4 rounded-2xl bg-[#F5F1E8] border border-[#E8E1D3] hover:border-[#1B4332] transition flex flex-col sm:flex-row items-start sm:items-center gap-3 group"
               >
                 <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-[#1B4332] group-hover:bg-[#E63946] text-[#FAF7F0] flex items-center justify-center transition shrink-0">
                   <AppIcon name={item.icon} className="w-5 h-5" />

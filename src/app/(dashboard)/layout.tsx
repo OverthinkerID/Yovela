@@ -25,6 +25,7 @@ interface RegTokenItem {
 
 const DEFAULT_PERMS: Record<UserRole, string[]> = {
   DOKTER: ['dashboard', 'jadwal', 'pasien', 'antrean', 'display-antrean', 'poli', 'satusehat', 'stok', 'kasir', 'laporan', 'pengeluaran'],
+  DOKTER_LAIN: ['dashboard', 'jadwal', 'pasien', 'antrean', 'display-antrean', 'poli', 'satusehat', 'stok'],
   PENDAFTARAN: ['dashboard', 'jadwal', 'pasien', 'antrean', 'display-antrean', 'stok'],
   KASIR: ['dashboard', 'kasir', 'laporan'],
 };
@@ -54,7 +55,63 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const isTVDisplay = pathname?.includes('/display-antrean');
 
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const [searchSidebarQuery, setSearchSidebarQuery] = useState('');
+  const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({
+    OVERVIEW: true,
+    OPERASIONAL: false,
+    'PELAYANAN MEDIS': false,
+    'KEUANGAN & LOGISTIK': false,
+  });
+
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem('yovela_sidebar_open_cats');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object') {
+          setOpenCategories((prev) => ({ ...prev, ...parsed }));
+        }
+      }
+    } catch {}
+  }, []);
+
+  // Auto-collapse kategori menu setelah 4 detik jika kursor tidak berada di sidebar
+  useEffect(() => {
+    const hasExpandedGroup =
+      openCategories.OPERASIONAL ||
+      openCategories['PELAYANAN MEDIS'] ||
+      openCategories['KEUANGAN & LOGISTIK'];
+    if (!hasExpandedGroup || isSidebarHovered || isCollapsed || searchSidebarQuery.trim()) {
+      return;
+    }
+    const timer = setTimeout(() => {
+      setOpenCategories((prev) => {
+        const next = {
+          ...prev,
+          OVERVIEW: true,
+          OPERASIONAL: false,
+          'PELAYANAN MEDIS': false,
+          'KEUANGAN & LOGISTIK': false,
+        };
+        try {
+          sessionStorage.setItem('yovela_sidebar_open_cats', JSON.stringify(next));
+        } catch {}
+        return next;
+      });
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [openCategories, isSidebarHovered, isCollapsed, searchSidebarQuery]);
+
+  const toggleCategory = (catId: string) => {
+    setOpenCategories((prev) => {
+      const next = { ...prev, [catId]: !prev[catId] };
+      try {
+        sessionStorage.setItem('yovela_sidebar_open_cats', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
 
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
@@ -184,32 +241,108 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const activeUserLabel = currentUser.roleLabel;
   const isDoctorAdmin = currentUser.role === 'DOKTER';
 
+  interface SidebarNavItem {
+    id: string;
+    permKey?: string;
+    href?: string;
+    label: string;
+    icon: string;
+    isExternal?: boolean;
+    adminOnly?: boolean;
+    action?: () => void;
+  }
+
+  interface SidebarCategory {
+    id: string;
+    label: string;
+    icon: string;
+    items: SidebarNavItem[];
+  }
+
+  const openSettings = (tab: SettingsTabType) => {
+    setSettingsTab(isDoctorAdmin ? tab : 'tentang');
+    setShowSettingsModal(true);
+    setIsProfileMenuOpen(false);
+    setMobileSheet(null);
+  };
+
   const menuList: {
     permKey: string;
     href: string;
     label: string;
     icon: string;
-    category: 'home' | 'pasien' | 'klinis' | 'kasir';
     isExternal?: boolean;
   }[] = [
-    { permKey: 'dashboard', href: '/dashboard', label: 'Dasbor Utama', icon: 'house-chimney', category: 'home' },
-    { permKey: 'jadwal', href: '/jadwal', label: 'Jadwal Janji Temu', icon: 'calendar-check', category: 'pasien' },
-    { permKey: 'pasien', href: '/pasien', label: 'Pendaftaran Pasien', icon: 'user-plus', category: 'pasien' },
-    { permKey: 'antrean', href: '/antrean', label: 'Antrean Hari Ini', icon: 'clock-rotate-left', category: 'pasien' },
-    { permKey: 'display-antrean', href: '/display-antrean', label: 'Display TV Monitor', icon: 'tv', category: 'pasien', isExternal: true },
-    { permKey: 'poli', href: '/poli', label: 'Pemeriksaan (Poli)', icon: 'tooth', category: 'klinis' },
-    { permKey: 'satusehat', href: '/satusehat', label: 'Bridging SATUSEHAT', icon: 'hospital', category: 'klinis' },
-    { permKey: 'stok', href: '/stok', label: 'Stok BHP & Logistik', icon: 'box', category: 'klinis' },
-    { permKey: 'kasir', href: '/kasir', label: 'Kasir & Billing', icon: 'receipt', category: 'kasir' },
-    { permKey: 'laporan', href: '/laporan', label: 'Laporan Keuangan', icon: 'chart-pie', category: 'kasir' },
+    { permKey: 'dashboard', href: '/dashboard', label: 'Dashboard', icon: 'house-chimney' },
+    { permKey: 'jadwal', href: '/jadwal', label: 'Jadwal & Booking', icon: 'calendar-check' },
+    { permKey: 'pasien', href: '/pasien', label: 'Data Pasien', icon: 'user-plus' },
+    { permKey: 'antrean', href: '/antrean', label: 'Antrean', icon: 'clock-rotate-left' },
+    { permKey: 'display-antrean', href: '/display-antrean', label: 'Display Antrean', icon: 'tv', isExternal: true },
+    { permKey: 'poli', href: '/poli', label: 'Poli / Pemeriksaan', icon: 'tooth' },
+    { permKey: 'satusehat', href: '/satusehat', label: 'SATUSEHAT', icon: 'hospital' },
+    { permKey: 'kasir', href: '/kasir', label: 'Kasir & Pembayaran', icon: 'receipt' },
+    { permKey: 'laporan', href: '/laporan', label: 'Laporan Keuangan', icon: 'chart-pie' },
+    { permKey: 'stok', href: '/stok', label: 'Stok BHP', icon: 'box' },
   ];
 
   const myPerms = rolePermissions[currentUser.role] || DEFAULT_PERMS[currentUser.role] || ['dashboard'];
   const authorizedMenuList = menuList.filter((m) => myPerms.includes(m.permKey));
 
-  const filteredMenuList = authorizedMenuList.filter((m) =>
-    m.label.toLowerCase().includes(searchSidebarQuery.toLowerCase())
-  );
+  const sidebarCategories: SidebarCategory[] = [
+    {
+      id: 'OVERVIEW',
+      label: 'OVERVIEW',
+      icon: 'house-chimney',
+      items: [
+        { id: 'dashboard', permKey: 'dashboard', href: '/dashboard', label: 'Dashboard', icon: 'house-chimney' },
+      ],
+    },
+    {
+      id: 'OPERASIONAL',
+      label: 'OPERASIONAL',
+      icon: 'calendar-check',
+      items: [
+        { id: 'jadwal', permKey: 'jadwal', href: '/jadwal', label: 'Jadwal & Booking', icon: 'calendar-check' },
+        { id: 'pasien', permKey: 'pasien', href: '/pasien', label: 'Data Pasien', icon: 'user-plus' },
+        { id: 'antrean', permKey: 'antrean', href: '/antrean', label: 'Antrean', icon: 'clock-rotate-left' },
+        { id: 'display-antrean', permKey: 'display-antrean', href: '/display-antrean', label: 'Display Antrean', icon: 'tv', isExternal: true },
+      ],
+    },
+    {
+      id: 'PELAYANAN MEDIS',
+      label: 'PELAYANAN MEDIS',
+      icon: 'tooth',
+      items: [
+        { id: 'poli', permKey: 'poli', href: '/poli', label: 'Poli / Pemeriksaan', icon: 'tooth' },
+        { id: 'odontogram', permKey: 'poli', href: '/poli#odontogram', label: 'Rekam Medis & Odontogram', icon: 'notes-medical' },
+        { id: 'satusehat', permKey: 'satusehat', href: '/satusehat', label: 'SATUSEHAT', icon: 'hospital' },
+      ],
+    },
+    {
+      id: 'KEUANGAN & LOGISTIK',
+      label: 'KEUANGAN & LOGISTIK',
+      icon: 'wallet',
+      items: [
+        { id: 'kasir', permKey: 'kasir', href: '/kasir', label: 'Kasir & Pembayaran', icon: 'receipt' },
+        { id: 'laporan', permKey: 'laporan', label: 'Laporan Keuangan', href: '/laporan', icon: 'chart-pie' } as SidebarNavItem,
+        { id: 'stok', permKey: 'stok', href: '/stok', label: 'Stok BHP', icon: 'box' },
+      ],
+    },
+  ];
+
+  const visibleCategories = sidebarCategories
+    .map((cat) => {
+      const visibleItems = cat.items.filter((item) => {
+        if (item.adminOnly && !isDoctorAdmin) return false;
+        if (item.permKey && !myPerms.includes(item.permKey)) return false;
+        if (searchSidebarQuery.trim()) {
+          return item.label.toLowerCase().includes(searchSidebarQuery.toLowerCase());
+        }
+        return true;
+      });
+      return { ...cat, items: visibleItems };
+    })
+    .filter((cat) => cat.items.length > 0);
 
   const lainnyaItems = authorizedMenuList.filter(
     (m) => !['dashboard', 'jadwal', 'pasien'].includes(m.permKey)
@@ -288,12 +421,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   };
 
-  const openSettings = (tab: SettingsTabType) => {
-    setSettingsTab(isDoctorAdmin ? tab : 'tentang');
-    setShowSettingsModal(true);
-    setIsProfileMenuOpen(false);
-    setMobileSheet(null);
-  };
+
 
   const hasLainnyaAccess = lainnyaItems.length > 0 || isDoctorAdmin;
 
@@ -302,6 +430,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* DESKTOP FLOATING GLASS DOCK (Forest Green + Oat Milk + Red Tomato) */}
       <aside
+        onMouseEnter={() => setIsSidebarHovered(true)}
+        onMouseLeave={() => setIsSidebarHovered(false)}
         className={`hidden md:flex sticky top-3 h-[calc(100vh-1.5rem)] ml-3 my-3 rounded-[28px] bg-[#1B4332]/96 backdrop-blur-xl border border-[#2D6A4F] shadow-2xl shadow-[#1B4332]/25 text-[#FAF7F0] flex-col justify-between shrink-0 transition-all duration-300 ease-out z-40 select-none print:hidden ${
           isCollapsed ? 'w-[76px]' : 'w-64'
         }`}
@@ -322,15 +452,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             title={isCollapsed ? 'Klik untuk memperluas menu' : 'Klik untuk menciutkan menu'}
           >
             <div className={`flex items-center gap-3 overflow-hidden w-full ${isCollapsed ? 'justify-center' : ''}`}>
-              <div className="w-10 h-10 rounded-2xl bg-[#FAF7F0]/15 border border-[#FAF7F0]/25 text-[#FAF7F0] flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition">
+              <div className="w-10 h-10 rounded-full bg-[#FAF7F0]/15 border border-[#FAF7F0]/25 text-[#FAF7F0] flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition">
                 <svg viewBox="0 0 512 512" className="w-5 h-5 fill-[#FAF7F0]">
                   <path d="M416 112c-35.3 0-64 28.7-64 64v51.2c0 23.4-12.2 44.9-32.3 56.8L272 312.6l-47.7-28.6c-20.1-12-32.3-33.5-32.3-56.8V176c0-35.3-28.7-64-64-64S64 140.7 64 176c0 86.8 52.3 162.7 128 193.3V432c0 17.7 14.3 32 32 32h64c17.7 0 32-14.3 32-32V369.3c75.7-30.6 128-106.5 128-193.3c0-35.3-28.7-64-64-64z" />
                 </svg>
               </div>
               {!isCollapsed && (
                 <div className="truncate leading-tight">
-                  <h2 className="font-extrabold text-sm text-[#FAF7F0] tracking-tight">Yovela Dental</h2>
-                  <span className="text-[10px] text-[#95D5B2] font-semibold block">SIM-RME Studio</span>
+                  <h2 className="font-extrabold text-sm text-[#FAF7F0] tracking-tight">Yovela Dental Clinic</h2>
+                  <span className="text-[10px] text-[#95D5B2] font-semibold block">Overthinker Studio</span>
                 </div>
               )}
             </div>
@@ -353,42 +483,115 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           )}
 
-          <nav className={`p-3 space-y-1.5 text-xs font-semibold flex-1 ${isCollapsed ? 'overflow-visible' : 'overflow-y-auto'}`}>
-            {!isCollapsed && (
-              <p className="px-3 text-[10px] font-bold text-[#8FB8A3] uppercase tracking-wider mb-1">
-                WORKSPACE MENU
-              </p>
-            )}
-            {filteredMenuList.map((m) => {
-              const isActive = pathname === m.href;
+          <nav
+            aria-label="Navigasi Kategori Desktop"
+            className={`p-3 space-y-2 text-xs font-semibold flex-1 ${isCollapsed ? 'overflow-visible' : 'overflow-y-auto'}`}
+          >
+            {visibleCategories.map((cat, catIdx) => {
+              const isCategoryOpen = searchSidebarQuery.trim().length > 0 ? true : (openCategories[cat.id] ?? true);
+              const isItemActive = (item: SidebarNavItem) => {
+                if (!item.href) return false;
+                if (item.id === 'odontogram') return false;
+                const baseHref = item.href.split('#')[0];
+                return normalizedPath === baseHref;
+              };
+              const hasActiveChild = cat.items.some((item) => isItemActive(item));
+
               return (
-                <Link
-                  key={m.href}
-                  href={m.href}
-                  target={m.isExternal ? '_blank' : '_self'}
-                  rel={m.isExternal ? 'noopener noreferrer' : undefined}
-                  className={`relative group/item w-full flex items-center rounded-2xl transition-all duration-150 cursor-pointer ${
-                    isCollapsed ? 'justify-center p-2.5' : 'justify-between px-3.5 py-2.5'
-                  } ${
-                    isActive
-                      ? 'bg-[#FAF7F0] text-[#1B4332] font-black shadow-lg shadow-black/15'
-                      : 'text-[#C7DFD1] hover:bg-white/10 hover:text-white font-bold'
-                  }`}
+                <div
+                  key={cat.id}
+                  className={catIdx > 0 && isCollapsed ? 'pt-2 border-t border-white/10 space-y-1' : 'space-y-1'}
                 >
-                  <div className="flex items-center gap-3">
-                    <AppIcon name={m.icon} className="w-4 h-4 shrink-0" />
-                    {!isCollapsed && <span className="truncate">{m.label}</span>}
-                  </div>
-                  {m.isExternal && !isCollapsed && (
-                    <AppIcon name="arrow-up-right-from-square" className="w-3 h-3 opacity-60" />
+                  {!isCollapsed && (
+                    <button
+                      type="button"
+                      onClick={() => toggleCategory(cat.id)}
+                      aria-expanded={isCategoryOpen}
+                      className={`w-full px-2.5 py-1.5 rounded-xl flex items-center justify-between gap-2 text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer ${
+                        hasActiveChild ? 'text-[#FAF7F0] bg-white/8' : 'text-[#8FB8A3] hover:text-[#FAF7F0] hover:bg-white/5'
+                      }`}
+                    >
+                      <span className="flex items-center gap-2 min-w-0">
+                        <AppIcon name={cat.icon} className="w-4 h-4 shrink-0 text-[#95D5B2]" />
+                        <span className="truncate">{cat.label}</span>
+                        {hasActiveChild && !isCategoryOpen && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#E63946] shrink-0" />
+                        )}
+                      </span>
+                      <AppIcon
+                        name="chevron-down"
+                        className={`w-3 h-3 shrink-0 transition-transform duration-200 ${
+                          isCategoryOpen ? 'rotate-0' : '-rotate-90'
+                        }`}
+                      />
+                    </button>
                   )}
 
-                  {isCollapsed && (
-                    <span className="pointer-events-none opacity-0 group-hover/item:opacity-100 translate-x-1 group-hover/item:translate-x-0 transition-all duration-150 absolute left-full ml-3.5 px-3 py-1.5 rounded-xl bg-[#0E261C] text-[#FAF7F0] text-[11px] font-bold whitespace-nowrap shadow-xl border border-[#2D6A4F] z-50">
-                      {m.label}
-                    </span>
-                  )}
-                </Link>
+                  <div
+                    className={`grid transition-all duration-200 ease-out ${
+                      isCollapsed || isCategoryOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                    }`}
+                  >
+                    <div className={isCollapsed ? 'overflow-visible space-y-1' : 'overflow-hidden space-y-1'}>
+                      {cat.items.map((m) => {
+                        const active = isItemActive(m);
+                        const itemClass = `relative group/item w-full flex items-center rounded-2xl transition-all duration-150 cursor-pointer ${
+                          isCollapsed ? 'justify-center p-2.5' : 'justify-between px-3 py-2'
+                        } ${
+                          active
+                            ? 'bg-[#FAF7F0] text-[#1B4332] font-black shadow-lg shadow-black/15'
+                            : 'text-[#C7DFD1] hover:bg-white/10 hover:text-white font-bold'
+                        }`;
+
+                        const content = (
+                          <>
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              {active && !isCollapsed && (
+                                <span className="w-1.5 h-4 rounded-full bg-[#E63946] shrink-0" />
+                              )}
+                              <AppIcon name={m.icon} className="w-4 h-4 shrink-0" />
+                              {!isCollapsed && <span className="truncate">{m.label}</span>}
+                            </div>
+                            {m.isExternal && !isCollapsed && (
+                              <AppIcon name="arrow-up-right-from-square" className="w-3 h-3 opacity-60 shrink-0" />
+                            )}
+                            {isCollapsed && (
+                              <span className="pointer-events-none opacity-0 group-hover/item:opacity-100 translate-x-1 group-hover/item:translate-x-0 transition-all duration-150 absolute left-full ml-3.5 px-3 py-1.5 rounded-xl bg-[#0E261C] text-[#FAF7F0] text-[11px] font-bold whitespace-nowrap shadow-xl border border-[#2D6A4F] z-50">
+                                <span className="block text-[9px] text-[#95D5B2] uppercase tracking-wider">{cat.label}</span>
+                                <span>{m.label}</span>
+                              </span>
+                            )}
+                          </>
+                        );
+
+                        if (m.action) {
+                          return (
+                            <button
+                              key={m.id}
+                              type="button"
+                              onClick={m.action}
+                              className={itemClass}
+                            >
+                              {content}
+                            </button>
+                          );
+                        }
+
+                        return (
+                          <Link
+                            key={m.id}
+                            href={m.href || '/dashboard'}
+                            target={m.isExternal ? '_blank' : '_self'}
+                            rel={m.isExternal ? 'noopener noreferrer' : undefined}
+                            className={itemClass}
+                          >
+                            {content}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
               );
             })}
           </nav>
@@ -420,12 +623,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </aside>
 
-      {/* KONTEN UTAMA & FLOATING GLASS HEADER */}
+      {/* KONTEN UTAMA & FLOATING GLASS HEADER (MELAYANG & STATIS DI ATAS) */}
       <div className="flex-1 flex flex-col min-w-0 w-full overflow-x-hidden pb-28 md:pb-0">
         <div className="px-3 pt-3 sticky top-0 z-30 print:hidden">
           <header className="bg-[#FAF7F0]/90 backdrop-blur-xl border border-[#DED6C5] rounded-2xl px-4 sm:px-5 py-2.5 shadow-xs flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-7 h-7 rounded-xl bg-[#1B4332] text-[#FAF7F0] flex items-center justify-center font-bold text-xs shrink-0">
+              <div className="w-8 h-8 rounded-full bg-[#1B4332] text-[#FAF7F0] flex items-center justify-center font-bold text-xs shrink-0">
                 <AppIcon name="tooth" />
               </div>
               <span className="text-xs font-extrabold text-[#1B4332] tracking-tight truncate">
@@ -504,20 +707,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     >
                       <AppIcon name="award" className="text-[#2D6A4F] text-xs w-4" />
                       <span>Tentang Aplikasi</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        handleToggleTheme();
-                        setIsProfileMenuOpen(false);
-                      }}
-                      className="w-full px-4 py-2 text-left text-xs text-[#1B4332] hover:bg-[#F5F1E8] flex items-center justify-between gap-2.5 transition cursor-pointer font-semibold"
-                    >
-                      <span className="flex items-center gap-2.5">
-                        <AppIcon name={theme === 'dark' ? 'sun' : 'moon'} className="text-[#2D6A4F] text-xs w-4" />
-                        <span>Tema ({theme === 'dark' ? 'Dark' : 'Light'})</span>
-                      </span>
-                      <span className="text-[10px] text-[#52796F]">Ubah</span>
                     </button>
                     <div className="my-1 border-t border-[#E8E1D3]" />
                     <button
@@ -904,7 +1093,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         onClick={() => handleGenerateToken('DOKTER')}
                         className="px-2.5 py-1 rounded-lg bg-[#1B4332] text-[#FAF7F0] font-bold text-[10px] cursor-pointer"
                       >
-                        + Token Dokter
+                        + Token Owner/Admin
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleGenerateToken('DOKTER_LAIN')}
+                        className="px-2.5 py-1 rounded-lg bg-[#40916C] text-[#FAF7F0] font-bold text-[10px] cursor-pointer"
+                      >
+                        + Token Dokter Praktik
                       </button>
                       <button
                         type="button"
@@ -1010,13 +1206,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   Atur modul yang dapat diakses oleh setiap role secara dinamis. Perubahan langsung berlaku pada menu navigasi dan hak akses halaman.
                 </p>
 
-                {(['DOKTER', 'PENDAFTARAN', 'KASIR'] as UserRole[]).map((role) => (
+                {(['DOKTER', 'DOKTER_LAIN', 'PENDAFTARAN', 'KASIR'] as UserRole[]).map((role) => (
                   <div key={role} className="p-4 rounded-2xl bg-[#F5F1E8] border border-[#DED6C5] space-y-3">
                     <div className="flex items-center justify-between gap-2">
                       <div>
                         <h4 className="font-extrabold text-[#1B4332]">
                           {role === 'DOKTER'
-                            ? 'DOKTER (Admin Klinik)'
+                            ? 'DOKTER (Owner / Admin Klinik — drg. Yuli)'
+                            : role === 'DOKTER_LAIN'
+                            ? 'DOKTER_LAIN (Dokter Gigi Praktik Non-Admin)'
                             : role === 'PENDAFTARAN'
                             ? 'PENDAFTARAN (Perawat / Front Office)'
                             : 'KASIR (Admin Pembayaran)'}
@@ -1227,7 +1425,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       <AppIcon name="sparkles" className="w-6 h-6 text-[#95D5B2]" />
                     </div>
                     <div>
-                      <h4 className="text-base font-black tracking-tight">Yovela Dental Clinic — SIM-RME v3.3</h4>
+                      <h4 className="text-base font-black tracking-tight">Yovela Dental Clinic v3.3</h4>
                       <p className="text-xs text-[#95D5B2] font-bold">Dikembangkan oleh Overthinker Studio</p>
                     </div>
                   </div>

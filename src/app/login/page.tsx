@@ -110,7 +110,7 @@ export default function LoginPage() {
         <div className="w-full max-w-md bg-[#1B4332] border border-[#2D6A4F] rounded-3xl p-8 shadow-2xl shadow-[#1B4332]/25 text-[#FAF7F0]">
           {/* Logo & Header */}
           <div className="flex flex-col items-center text-center mb-6">
-            <div className="w-16 h-16 rounded-2xl bg-[#FAF7F0]/10 border border-[#FAF7F0]/20 flex items-center justify-center p-3 mb-3 shadow-lg">
+            <div className="w-16 h-16 rounded-full bg-[#FAF7F0]/10 border border-[#FAF7F0]/20 flex items-center justify-center p-3 mb-3 shadow-lg">
               <svg viewBox="0 0 512 512" className="w-full h-full fill-[#FAF7F0]">
                 <path d="M416 112c-35.3 0-64 28.7-64 64v51.2c0 23.4-12.2 44.9-32.3 56.8L272 312.6l-47.7-28.6c-20.1-12-32.3-33.5-32.3-56.8V176c0-35.3-28.7-64-64-64S64 140.7 64 176c0 86.8 52.3 162.7 128 193.3V432c0 17.7 14.3 32 32 32h64c17.7 0 32-14.3 32-32V369.3c75.7-30.6 128-106.5 128-193.3c0-35.3-28.7-64-64-64z" />
               </svg>

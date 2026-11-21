@@ -3,7 +3,7 @@ import { prisma } from '../../../lib/prisma';
 import { requireAuth } from '../../../lib/auth';
 
 export async function GET() {
-  const { errorResponse } = await requireAuth(['DOKTER']);
+  const { errorResponse } = await requireAuth(['DOKTER', 'DOKTER_LAIN']);
   if (errorResponse) return errorResponse;
 
   const logs = await prisma.satuSehatSyncLog.findMany({
@@ -32,7 +32,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const { user, errorResponse } = await requireAuth(['DOKTER']);
+  const { user, errorResponse } = await requireAuth(['DOKTER', 'DOKTER_LAIN']);
   if (errorResponse) return errorResponse;
 
   try {

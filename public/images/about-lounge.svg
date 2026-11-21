@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" fill="none">
+  <rect width="800" height="600" fill="#F3EBDD"/>
+  <rect x="48" y="48" width="704" height="504" rx="36" fill="#FAF6EE" stroke="#D5C8B0" stroke-width="2"/>
+  <path d="M120 470V250C120 172.68 182.68 110 260 110H340C417.32 110 480 172.68 480 250V470H120Z" fill="#234B38"/>
+  <rect x="165" y="340" width="270" height="74" rx="24" fill="#E7DAC3"/>
+  <rect x="185" y="295" width="230" height="58" rx="20" fill="#FAF6EE"/>
+  <circle cx="600" cy="215" r="76" fill="#E65B45" opacity="0.16"/>
+  <circle cx="600" cy="215" r="46" fill="#234B38"/>
+  <path d="M585 202C585 193.716 591.716 187 600 187C608.284 187 615 193.716 615 202V214C615 227 608 242 600 242C592 242 585 227 585 214V202Z" fill="#FAF6EE"/>
+  <rect x="520" y="330" width="160" height="16" rx="8" fill="#234B38"/>
+  <rect x="520" y="360" width="130" height="12" rx="6" fill="#4E725E" opacity="0.65"/>
+  <rect x="520" y="384" width="110" height="12" rx="6" fill="#4E725E" opacity="0.45"/>
+  <rect x="520" y="424" width="144" height="36" rx="18" fill="#E65B45"/>
+  <text x="592" y="447" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="700" fill="#FAF6EE">CALM LOUNGE</text>
+</svg>

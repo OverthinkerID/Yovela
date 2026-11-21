@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" fill="none">
+  <rect width="800" height="600" fill="#234B38"/>
+  <rect x="70" y="70" width="660" height="460" rx="36" fill="#173426" stroke="#4E725E" stroke-width="2"/>
+  <rect x="160" y="150" width="480" height="250" rx="28" fill="#FAF6EE"/>
+  <rect x="200" y="190" width="180" height="170" rx="22" fill="#F3EBDD" stroke="#D5C8B0" stroke-width="2"/>
+  <circle cx="290" cy="275" r="48" fill="#234B38"/>
+  <path d="M270 275L285 290L314 260" stroke="#FAF6EE" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="415" y="205" width="185" height="16" rx="8" fill="#234B38"/>
+  <rect x="415" y="238" width="150" height="12" rx="6" fill="#4E725E" opacity="0.6"/>
+  <rect x="415" y="275" width="185" height="46" rx="16" fill="#F3EBDD"/>
+  <circle cx="445" cy="298" r="10" fill="#E65B45"/>
+  <rect x="468" y="292" width="110" height="12" rx="6" fill="#234B38"/>
+  <rect x="415" y="335" width="130" height="10" rx="5" fill="#4E725E" opacity="0.45"/>
+  <text x="400" y="472" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700" fill="#FAF6EE" letter-spacing="1.5">STERILIZATION PROTOCOL</text>
+</svg>

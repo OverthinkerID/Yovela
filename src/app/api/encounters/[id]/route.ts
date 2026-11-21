@@ -7,7 +7,7 @@ export async function PATCH(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
-  const { user, errorResponse } = await requireAuth(['DOKTER', 'PENDAFTARAN', 'KASIR']);
+  const { user, errorResponse } = await requireAuth(['DOKTER', 'DOKTER_LAIN', 'PENDAFTARAN', 'KASIR']);
   if (errorResponse) return errorResponse;
 
   try {

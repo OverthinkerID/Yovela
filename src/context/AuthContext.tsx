@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
-export type UserRole = 'DOKTER' | 'PENDAFTARAN' | 'KASIR';
+export type UserRole = 'DOKTER' | 'DOKTER_LAIN' | 'PENDAFTARAN' | 'KASIR';
 
 export interface User {
   id: string;

@@ -6,7 +6,7 @@ export async function PATCH(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
-  const { user, errorResponse } = await requireAuth(['DOKTER', 'PENDAFTARAN']);
+  const { user, errorResponse } = await requireAuth(['DOKTER', 'DOKTER_LAIN', 'PENDAFTARAN']);
   if (errorResponse) return errorResponse;
 
   try {
@@ -115,7 +115,7 @@ export async function DELETE(
   _request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
-  const { user, errorResponse } = await requireAuth(['DOKTER', 'PENDAFTARAN']);
+  const { user, errorResponse } = await requireAuth(['DOKTER', 'DOKTER_LAIN', 'PENDAFTARAN']);
   if (errorResponse) return errorResponse;
 
   try {

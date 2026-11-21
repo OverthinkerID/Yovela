@@ -45,7 +45,7 @@ function formatInvoice(inv: any) {
 }
 
 export async function GET() {
-  const { errorResponse } = await requireAuth(['DOKTER', 'KASIR', 'PENDAFTARAN']);
+  const { errorResponse } = await requireAuth(['DOKTER', 'DOKTER_LAIN', 'KASIR', 'PENDAFTARAN']);
   if (errorResponse) return errorResponse;
 
   const invoices = await prisma.invoice.findMany({

@@ -6,7 +6,7 @@ export async function GET(
   _request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
-  const { errorResponse } = await requireAuth(['DOKTER', 'PENDAFTARAN']);
+  const { errorResponse } = await requireAuth(['DOKTER', 'DOKTER_LAIN', 'PENDAFTARAN']);
   if (errorResponse) return errorResponse;
 
   const { id } = await context.params;
@@ -33,7 +33,7 @@ export async function POST(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
-  const { user, errorResponse } = await requireAuth(['DOKTER']);
+  const { user, errorResponse } = await requireAuth(['DOKTER', 'DOKTER_LAIN']);
   if (errorResponse) return errorResponse;
 
   try {

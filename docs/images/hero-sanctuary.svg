@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 720" fill="none">
+  <defs>
+    <linearGradient id="bgHero" x1="0" y1="0" x2="960" y2="720" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FAF6EE"/>
+      <stop offset="55%" stop-color="#F3EBDD"/>
+      <stop offset="100%" stop-color="#E7DAC3"/>
+    </linearGradient>
+    <linearGradient id="greenArch" x1="220" y1="90" x2="740" y2="620" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#234B38"/>
+      <stop offset="100%" stop-color="#173426"/>
+    </linearGradient>
+  </defs>
+  <rect width="960" height="720" fill="url(#bgHero)"/>
+  <circle cx="800" cy="140" r="110" fill="#E65B45" opacity="0.14"/>
+  <circle cx="150" cy="590" r="140" fill="#234B38" opacity="0.09"/>
+  <path d="M220 620V310C220 177.452 327.452 70 460 70H500C632.548 70 740 177.452 740 310V620H220Z" fill="url(#greenArch)"/>
+  <path d="M265 620V315C265 204.543 354.543 115 465 115H495C605.457 115 695 204.543 695 315V620H265Z" fill="#FAF6EE" fill-opacity="0.08" stroke="#D5C8B0" stroke-opacity="0.35" stroke-width="2"/>
+  <rect x="335" y="420" width="290" height="32" rx="16" fill="#F3EBDD"/>
+  <rect x="355" y="452" width="250" height="80" rx="22" fill="#E7DAC3"/>
+  <path d="M365 390C365 340 400 305 445 305H515C560 305 595 340 595 390V422H365V390Z" fill="#FAF6EE"/>
+  <rect x="395" y="210" width="170" height="14" rx="7" fill="#95D5B2" opacity="0.8"/>
+  <circle cx="480" cy="168" r="24" fill="#E65B45"/>
+  <path d="M472 162C472 157.582 475.582 154 480 154C484.418 154 488 157.582 488 162V172C488 176.418 484.418 180 480 180C475.582 180 472 176.418 472 172V162Z" fill="#FAF6EE"/>
+  <rect x="315" y="556" width="330" height="16" rx="8" fill="#132A1F"/>
+  <rect x="130" y="130" width="180" height="92" rx="22" fill="#FAF6EE" stroke="#D5C8B0" stroke-width="2"/>
+  <circle cx="164" cy="166" r="14" fill="#234B38"/>
+  <rect x="190" y="156" width="90" height="10" rx="5" fill="#234B38"/>
+  <rect x="190" y="176" width="64" height="8" rx="4" fill="#4E725E" opacity="0.65"/>
+  <rect x="640" y="470" width="200" height="96" rx="22" fill="#FAF6EE" stroke="#D5C8B0" stroke-width="2"/>
+  <circle cx="678" cy="518" r="16" fill="#E65B45" opacity="0.18"/>
+  <circle cx="678" cy="518" r="7" fill="#E65B45"/>
+  <rect x="708" y="504" width="102" height="10" rx="5" fill="#234B38"/>
+  <rect x="708" y="524" width="76" height="8" rx="4" fill="#4E725E" opacity="0.65"/>
+  <text x="480" y="668" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#234B38" letter-spacing="2">YOVELA DENTAL CLINIC • SANCTUARY</text>
+</svg>

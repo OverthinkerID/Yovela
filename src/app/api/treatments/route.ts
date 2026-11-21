@@ -3,7 +3,7 @@ import { prisma } from '../../../lib/prisma';
 import { requireAuth } from '../../../lib/auth';
 
 export async function GET() {
-  const { errorResponse } = await requireAuth(['DOKTER', 'PENDAFTARAN', 'KASIR']);
+  const { errorResponse } = await requireAuth(['DOKTER', 'DOKTER_LAIN', 'PENDAFTARAN', 'KASIR']);
   if (errorResponse) return errorResponse;
 
   const treatments = await prisma.treatment.findMany({

@@ -4,7 +4,7 @@ import { requireAuth } from '../../../lib/auth';
 import { serializePatientWithEncounter } from '../../../lib/serializers';
 
 export async function POST(request: Request) {
-  const { user, errorResponse } = await requireAuth(['DOKTER', 'PENDAFTARAN']);
+  const { user, errorResponse } = await requireAuth(['DOKTER', 'DOKTER_LAIN', 'PENDAFTARAN']);
   if (errorResponse) return errorResponse;
 
   try {

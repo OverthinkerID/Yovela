@@ -12,8 +12,8 @@ interface TreatmentCardProps {
 
 export const TreatmentCard: React.FC<TreatmentCardProps> = ({ item, index, onExplore }) => {
   return (
-    <article className="gsap-stagger-card group bg-[#FAF6EE] border border-[#DFD4C0] rounded-[28px] p-6 sm:p-7 flex flex-col justify-between space-y-6 transition-all duration-300 hover:-translate-y-1.5 hover:border-[#234B38] hover:shadow-xl hover:shadow-[#234B38]/10">
-      <div className="space-y-4">
+    <article className="gsap-stagger-card group h-full bg-[#FAF6EE] border border-[#DFD4C0] rounded-[28px] p-6 sm:p-7 flex flex-col gap-6 transition-all duration-300 hover:-translate-y-1.5 hover:border-[#234B38] hover:shadow-xl hover:shadow-[#234B38]/10">
+      <div className="flex-1 space-y-4">
         <div className="flex items-center justify-between gap-2">
           <span className="px-3 py-1 rounded-full bg-[#F3EBDD] border border-[#DFD4C0] text-[#234B38] text-[10px] font-bold uppercase tracking-wider">
             {item.category}
@@ -24,13 +24,13 @@ export const TreatmentCard: React.FC<TreatmentCardProps> = ({ item, index, onExp
         </div>
 
         <div>
-          <h3 className="font-editorial text-xl sm:text-2xl font-semibold text-[#234B38] group-hover:text-[#E65B45] transition-colors leading-snug">
+          <h3 className="font-editorial text-xl sm:text-2xl font-semibold text-[#234B38] group-hover:text-[#E65B45] transition-colors leading-snug line-clamp-2">
             {item.title}
           </h3>
-          <p className="text-xs font-semibold text-[#4A6B5B] mt-1">{item.subtitle}</p>
+          <p className="text-xs font-semibold text-[#4A6B5B] mt-1 line-clamp-1">{item.subtitle}</p>
         </div>
 
-        <p className="text-xs sm:text-sm text-[#4A6B5B] leading-relaxed">
+        <p className="text-xs sm:text-sm text-[#4A6B5B] leading-relaxed line-clamp-3">
           {item.description}
         </p>
 
@@ -44,7 +44,7 @@ export const TreatmentCard: React.FC<TreatmentCardProps> = ({ item, index, onExp
         </ul>
       </div>
 
-      <div className="pt-4 border-t border-[#DFD4C0] flex items-center justify-between gap-3">
+      <div className="mt-auto pt-4 border-t border-[#DFD4C0] flex items-center justify-between gap-3">
         <div>
           <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#4A6B5B]">
             <Clock className="w-3 h-3" />

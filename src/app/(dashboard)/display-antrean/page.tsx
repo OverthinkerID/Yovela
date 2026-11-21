@@ -133,7 +133,7 @@ export default function DisplayAntreanPage() {
       {/* HEADER: Khas Tema Yovela Dental Mint */}
       <header className="bg-white rounded-3xl border border-slate-200/80 shadow-xs px-8 py-4 flex flex-wrap justify-between items-center gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-[#1B4332]/10 border border-[#1B4332]/30 flex items-center justify-center p-2.5 shadow-xs">
+          <div className="w-14 h-14 rounded-full bg-[#1B4332]/10 border border-[#1B4332]/30 flex items-center justify-center p-2.5 shadow-xs">
             <svg viewBox="0 0 512 512" className="w-full h-full fill-[#1B4332]">
               <path d="M416 112c-35.3 0-64 28.7-64 64v51.2c0 23.4-12.2 44.9-32.3 56.8L272 312.6l-47.7-28.6c-20.1-12-32.3-33.5-32.3-56.8V176c0-35.3-28.7-64-64-64S64 140.7 64 176c0 86.8 52.3 162.7 128 193.3V432c0 17.7 14.3 32 32 32h64c17.7 0 32-14.3 32-32V369.3c75.7-30.6 128-106.5 128-193.3c0-35.3-28.7-64-64-64z" />
             </svg>

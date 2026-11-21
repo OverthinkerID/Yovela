@@ -83,3 +83,23 @@
 git clone https://github.com/OverthinkerID/Yovela.git
 cd Yovela
 npm install
+npx prisma db push
+npx prisma db seed
+npm run dev:all
+```
+
+### Daftar Script NPM
+
+| Script | Fungsi |
+| :--- | :--- |
+| `npm run dev` | Menjalankan server pengembangan Next.js (`http://localhost:3000`). |
+| `npm run dev:all` | Menyinkronkan Landing Page TSX ke `docs/` lalu menjalankan `next dev`. |
+| `npm run build:landing` | Membangun HTML statis Landing Page dari sumber TSX ke `docs/index.html`. |
+| `npm run sync:docs` | Alias untuk `build:landing` (menyalin HTML, CSS, JS runtime, & seluruh aset `public/images/` ke `docs/`). |
+| `npm run validate:docs` | Memvalidasi kelengkapan `docs/index.html`, aset gambar, CSS, JS runtime, & font Poppins. |
+| `npm run build` | Menjalankan `prisma generate && next build` untuk build produksi. |
+
+### Pemisahan Role Dokter (RBAC)
+
+- **DOKTER (Owner / Admin Klinik):** Akses penuh ke seluruh modul klinis, kasir, laporan laba rugi, pengeluaran, akun staf, token registrasi, pengaturan RBAC, dan webhook WhatsApp.
+- **DOKTER_LAIN (Dokter Gigi Praktik Non-Admin):** Akses ke modul klinis & operasional (`dashboard`, `jadwal`, `pasien`, `antrean`, `display-antrean`, `poli`, `satusehat`, `stok`) tanpa akses admin/pengeluaran. Dapat diatur dinamis lewat tab **Role & Wewenang**.

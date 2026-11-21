@@ -66,7 +66,7 @@ export const LANDING_CONFIG = {
       'Thoughtful dental care, modern treatments, and a comfortable experience designed around your smile.',
     primaryCta: 'Book Appointment',
     secondaryCta: 'Explore Our Clinic',
-    imageSrc: '', // Isi path foto asli (mis. '/images/hero-clinic.jpg') saat aset foto tersedia
+    imageSrc: '/images/hero-sanctuary.svg', // Ilustrasi sementara — ganti dengan foto asli klinik saat tersedia
     imageCaption: 'Ruang Perawatan Tenang & Steril — Yovela Dental Clinic',
     stats: [
       { value: 5, suffix: '.0', label: 'Patient Comfort Focus' },
@@ -86,8 +86,8 @@ export const LANDING_CONFIG = {
       { number: '01', title: 'Calm Architecture', desc: 'Nuansa ruang hangat bernuansa Forest & Oat yang meredam kecemasan pasien.' },
       { number: '02', title: 'Visual Transparency', desc: 'Kondisi gigi ditampilkan jelas lewat pemetaan digital sebelum estimasi biaya.' },
     ],
-    primaryImageSrc: '',
-    secondaryImageSrc: '',
+    primaryImageSrc: '/images/about-lounge.svg',
+    secondaryImageSrc: '/images/about-detail.svg',
   },
 
   treatments: [
@@ -275,30 +275,35 @@ export const LANDING_CONFIG = {
       title: 'Calm Reception Lounge',
       caption: 'Area tunggu bernuansa Oat Milk & Forest Green yang tenang dan bebas bau obat menyengat.',
       tag: 'Interior',
+      imageSrc: '/images/about-lounge.svg',
     },
     {
       id: 'gal-2',
       title: 'Treatment Suite 01',
       caption: 'Unit dental modern dengan pencahayaan nyaman dan layar edukasi pasien.',
       tag: 'Clinical Suite',
+      imageSrc: '/images/gallery-suite.svg',
     },
     {
       id: 'gal-3',
       title: 'Sterilization Room',
       caption: 'Zona sterilisasi instrumen terpisah dengan standar autoclave medis.',
       tag: 'Hygiene',
+      imageSrc: '/images/gallery-sterile.svg',
     },
     {
       id: 'gal-4',
       title: 'Digital Consultation Corner',
       caption: 'Sesi penjelasan odontogram dan rencana perawatan secara transparan.',
       tag: 'Experience',
+      imageSrc: '/images/gallery-consult.svg',
     },
     {
       id: 'gal-5',
       title: 'Seamless Checkout Lounge',
       caption: 'Konfirmasi jadwal kontrol dan pembayaran cepat dengan QRIS & EDC.',
       tag: 'Hospitality',
+      imageSrc: '/images/about-detail.svg',
     },
   ] as GalleryConfigItem[],
 

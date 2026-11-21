@@ -172,11 +172,11 @@ export default function AntreanPoliPage() {
 
       {/* 2. STATISTIK KARTU ANTREAN BERGAYA YOVELA */}
       <section className="bg-white border-b border-slate-200/80 px-4 sm:px-6 lg:px-8 xl:px-10 py-4 shadow-2xs">
-        <div className="max-w-[1440px] w-full mx-auto grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+        <div className="max-w-[1440px] w-full mx-auto grid grid-cols-2 sm:grid-cols-4 gap-3.5 items-stretch">
           {/* Menunggu */}
           <div 
             onClick={() => setStatusFilter('Menunggu')}
-            className={`p-3.5 rounded-2xl border transition duration-150 cursor-pointer ${
+            className={`h-full flex flex-col justify-between p-3.5 rounded-2xl border transition duration-150 cursor-pointer ${
               statusFilter === 'Menunggu'
                 ? 'bg-amber-50/80 border-amber-300 ring-2 ring-amber-300/40'
                 : 'bg-slate-50/70 border-slate-200/90 hover:bg-slate-50'
@@ -187,13 +187,13 @@ export default function AntreanPoliPage() {
               <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
             </div>
             <h3 className="text-2xl font-black font-mono text-amber-600 mt-1">{stats.waiting}</h3>
-            <p className="text-[10px] text-slate-500 mt-0.5">Pasien di ruang tunggu</p>
+            <p className="text-[10px] text-slate-500 mt-auto pt-1">Pasien di ruang tunggu</p>
           </div>
 
           {/* Sedang Diperiksa */}
           <div 
             onClick={() => setStatusFilter('Sedang Diperiksa')}
-            className={`p-3.5 rounded-2xl border transition duration-150 cursor-pointer ${
+            className={`h-full flex flex-col justify-between p-3.5 rounded-2xl border transition duration-150 cursor-pointer ${
               statusFilter === 'Sedang Diperiksa'
                 ? 'bg-[#1B4332]/10 border-[#1B4332] ring-2 ring-[#1B4332]/30'
                 : 'bg-slate-50/70 border-slate-200/90 hover:bg-slate-50'
@@ -204,7 +204,7 @@ export default function AntreanPoliPage() {
               <span className="w-2 h-2 rounded-full bg-[#1B4332]" />
             </div>
             <h3 className="text-2xl font-black font-mono text-[#1B4332] mt-1">{stats.inProgress}</h3>
-            <p className="text-[10px] text-slate-500 mt-0.5 truncate">
+            <p className="text-[10px] text-slate-500 mt-auto pt-1 truncate">
               {currentActivePatient ? currentActivePatient.name : 'Tidak ada pasien di dental chair'}
             </p>
           </div>
@@ -212,7 +212,7 @@ export default function AntreanPoliPage() {
           {/* Menunggu Pembayaran (Kasir) */}
           <div 
             onClick={() => setStatusFilter('Menunggu Pembayaran')}
-            className={`p-3.5 rounded-2xl border transition duration-150 cursor-pointer ${
+            className={`h-full flex flex-col justify-between p-3.5 rounded-2xl border transition duration-150 cursor-pointer ${
               statusFilter === 'Menunggu Pembayaran'
                 ? 'bg-blue-50/80 border-blue-300 ring-2 ring-blue-300/40'
                 : 'bg-slate-50/70 border-slate-200/90 hover:bg-slate-50'
@@ -223,13 +223,13 @@ export default function AntreanPoliPage() {
               <span className="w-2 h-2 rounded-full bg-blue-500" />
             </div>
             <h3 className="text-2xl font-black font-mono text-blue-600 mt-1">{stats.billing}</h3>
-            <p className="text-[10px] text-slate-500 mt-0.5">Menunggu struk pembayaran</p>
+            <p className="text-[10px] text-slate-500 mt-auto pt-1">Menunggu struk pembayaran</p>
           </div>
 
           {/* Selesai */}
           <div 
             onClick={() => setStatusFilter('Selesai')}
-            className={`p-3.5 rounded-2xl border transition duration-150 cursor-pointer ${
+            className={`h-full flex flex-col justify-between p-3.5 rounded-2xl border transition duration-150 cursor-pointer ${
               statusFilter === 'Selesai'
                 ? 'bg-emerald-50/80 border-emerald-300 ring-2 ring-emerald-300/40'
                 : 'bg-slate-50/70 border-slate-200/90 hover:bg-slate-50'
@@ -240,7 +240,7 @@ export default function AntreanPoliPage() {
               <span className="w-2 h-2 rounded-full bg-emerald-600" />
             </div>
             <h3 className="text-2xl font-black font-mono text-emerald-700 mt-1">{stats.done}</h3>
-            <p className="text-[10px] text-slate-500 mt-0.5">Pemeriksaan rampung</p>
+            <p className="text-[10px] text-slate-500 mt-auto pt-1">Pemeriksaan rampung</p>
           </div>
         </div>
       </section>

@@ -3,7 +3,7 @@ import { prisma } from '../../../lib/prisma';
 import { requireAuth } from '../../../lib/auth';
 
 export async function GET(request: Request) {
-  const { errorResponse } = await requireAuth(['DOKTER', 'PENDAFTARAN', 'KASIR']);
+  const { errorResponse } = await requireAuth(['DOKTER', 'DOKTER_LAIN', 'PENDAFTARAN', 'KASIR']);
   if (errorResponse) return errorResponse;
 
   const { searchParams } = new URL(request.url);
@@ -38,7 +38,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const { user, errorResponse } = await requireAuth(['DOKTER', 'PENDAFTARAN']);
+  const { user, errorResponse } = await requireAuth(['DOKTER', 'DOKTER_LAIN', 'PENDAFTARAN']);
   if (errorResponse) return errorResponse;
 
   try {

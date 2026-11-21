@@ -13,7 +13,7 @@ export async function GET() {
 
 // POST untuk memanggil pasien dari resepsionis/poli ke semua Display TV
 export async function POST(request: Request) {
-  const { user, errorResponse } = await requireAuth(['DOKTER', 'PENDAFTARAN']);
+  const { user, errorResponse } = await requireAuth(['DOKTER', 'DOKTER_LAIN', 'PENDAFTARAN']);
   if (errorResponse) return errorResponse;
 
   try {

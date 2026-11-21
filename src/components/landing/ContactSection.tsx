@@ -19,17 +19,17 @@ export const ContactSection: React.FC = () => {
           />
         </div>
 
-        <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="gsap-stagger-card bg-[#FAF6EE] border border-[#DFD4C0] rounded-[28px] p-6 space-y-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-[#234B38] text-[#F3EBDD] flex items-center justify-center">
+        <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4 items-stretch">
+          <div className="gsap-stagger-card h-full flex flex-col bg-[#FAF6EE] border border-[#DFD4C0] rounded-[28px] p-6 space-y-2.5">
+            <div className="w-10 h-10 rounded-2xl bg-[#234B38] text-[#F3EBDD] flex items-center justify-center shrink-0">
               <MapPin className="w-4 h-4" />
             </div>
             <h3 className="text-sm font-extrabold text-[#234B38]">Alamat Klinik</h3>
             <p className="text-xs text-[#4A6B5B] leading-relaxed">{contact.addressPlaceholder}</p>
           </div>
 
-          <div className="gsap-stagger-card bg-[#FAF6EE] border border-[#DFD4C0] rounded-[28px] p-6 space-y-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-[#234B38] text-[#F3EBDD] flex items-center justify-center">
+          <div className="gsap-stagger-card h-full flex flex-col bg-[#FAF6EE] border border-[#DFD4C0] rounded-[28px] p-6 space-y-2.5">
+            <div className="w-10 h-10 rounded-2xl bg-[#234B38] text-[#F3EBDD] flex items-center justify-center shrink-0">
               <Clock className="w-4 h-4" />
             </div>
             <h3 className="text-sm font-extrabold text-[#234B38]">Jam Operasional</h3>
@@ -43,16 +43,16 @@ export const ContactSection: React.FC = () => {
             </ul>
           </div>
 
-          <div className="gsap-stagger-card bg-[#FAF6EE] border border-[#DFD4C0] rounded-[28px] p-6 space-y-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-[#E65B45] text-[#FAF6EE] flex items-center justify-center">
+          <div className="gsap-stagger-card h-full flex flex-col bg-[#FAF6EE] border border-[#DFD4C0] rounded-[28px] p-6 space-y-2.5">
+            <div className="w-10 h-10 rounded-2xl bg-[#E65B45] text-[#FAF6EE] flex items-center justify-center shrink-0">
               <Phone className="w-4 h-4" />
             </div>
             <h3 className="text-sm font-extrabold text-[#234B38]">Telepon &amp; WhatsApp</h3>
             <p className="text-xs font-mono text-[#4A6B5B]">{contact.phonePlaceholder}</p>
           </div>
 
-          <div className="gsap-stagger-card bg-[#FAF6EE] border border-[#DFD4C0] rounded-[28px] p-6 space-y-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-[#234B38] text-[#F3EBDD] flex items-center justify-center">
+          <div className="gsap-stagger-card h-full flex flex-col bg-[#FAF6EE] border border-[#DFD4C0] rounded-[28px] p-6 space-y-2.5">
+            <div className="w-10 h-10 rounded-2xl bg-[#234B38] text-[#F3EBDD] flex items-center justify-center shrink-0">
               <Mail className="w-4 h-4" />
             </div>
             <h3 className="text-sm font-extrabold text-[#234B38]">Email Resmi</h3>

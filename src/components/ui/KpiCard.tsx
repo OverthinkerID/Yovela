@@ -54,12 +54,12 @@ export const KpiCard: React.FC<KpiCardProps> = ({
     <Tag
       type={onClick ? 'button' : undefined}
       onClick={onClick}
-      className={`yovela-card text-left w-full p-4 sm:p-5 space-y-2.5 hover-lift ${
+      className={`yovela-card text-left w-full h-full min-h-[116px] flex flex-col justify-between gap-3 p-4 sm:p-5 hover-lift ${
         onClick ? 'cursor-pointer' : ''
       }`}
     >
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[10px] sm:text-[11px] font-bold text-[#52796F] uppercase tracking-wider leading-tight">
+      <div className="flex items-start justify-between gap-2">
+        <span className="text-[10px] sm:text-[11px] font-bold text-[#52796F] uppercase tracking-wider leading-tight line-clamp-2">
           {label}
         </span>
         <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-2xl flex items-center justify-center shrink-0 ${styles.iconBg}`}>
@@ -67,7 +67,7 @@ export const KpiCard: React.FC<KpiCardProps> = ({
         </div>
       </div>
 
-      <div>
+      <div className="mt-auto">
         <h3 className={`text-xl sm:text-2xl lg:text-3xl font-black font-mono tracking-tight ${styles.valueText}`}>
           {value}
         </h3>

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" fill="none">
+  <rect width="800" height="600" fill="#F3EBDD"/>
+  <rect x="85" y="85" width="630" height="430" rx="34" fill="#FAF6EE" stroke="#D5C8B0" stroke-width="2"/>
+  <rect x="135" y="135" width="530" height="270" rx="24" fill="#234B38"/>
+  <rect x="175" y="175" width="210" height="190" rx="18" fill="#FAF6EE" fill-opacity="0.1" stroke="#95D5B2" stroke-opacity="0.35" stroke-width="2"/>
+  <circle cx="230" cy="235" r="20" fill="#FAF6EE"/>
+  <circle cx="280" cy="235" r="20" fill="#95D5B2"/>
+  <circle cx="330" cy="235" r="20" fill="#E65B45"/>
+  <circle cx="230" cy="295" r="20" fill="#95D5B2"/>
+  <circle cx="280" cy="295" r="20" fill="#FAF6EE"/>
+  <circle cx="330" cy="295" r="20" fill="#FAF6EE"/>
+  <rect x="420" y="195" width="205" height="16" rx="8" fill="#FAF6EE"/>
+  <rect x="420" y="230" width="165" height="12" rx="6" fill="#95D5B2" opacity="0.75"/>
+  <rect x="420" y="260" width="185" height="12" rx="6" fill="#FAF6EE" opacity="0.5"/>
+  <rect x="420" y="305" width="150" height="38" rx="19" fill="#E65B45"/>
+  <text x="495" y="329" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="#FAF6EE">FDI ODONTOGRAM</text>
+  <text x="400" y="468" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700" fill="#234B38" letter-spacing="1.5">DIGITAL CONSULTATION</text>
+</svg>

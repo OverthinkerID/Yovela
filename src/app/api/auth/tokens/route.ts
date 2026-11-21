@@ -4,13 +4,15 @@ import { prisma } from '../../../../lib/prisma';
 import { requireAuth, UserRole } from '../../../../lib/auth';
 
 const ROLE_LABELS: Record<UserRole, string> = {
-  DOKTER: 'Dokter Gigi Umum',
+  DOKTER: 'Owner / Dokter Admin Klinik',
+  DOKTER_LAIN: 'Dokter Gigi Praktik',
   PENDAFTARAN: 'Perawat Gigi & Front Office',
   KASIR: 'Admin Pembayaran & Kasir',
 };
 
 const ROLE_PREFIX: Record<UserRole, string> = {
   DOKTER: 'DRG',
+  DOKTER_LAIN: 'DRP',
   PENDAFTARAN: 'PRW',
   KASIR: 'KSR',
 };
@@ -33,7 +35,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const role = String(body.role || 'PENDAFTARAN') as UserRole;
-    if (!['DOKTER', 'PENDAFTARAN', 'KASIR'].includes(role)) {
+    if (!['DOKTER', 'DOKTER_LAIN', 'PENDAFTARAN', 'KASIR'].includes(role)) {
       return NextResponse.json({ error: 'Peran token tidak valid.' }, { status: 400 });
     }
 

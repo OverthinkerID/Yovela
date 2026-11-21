@@ -16,17 +16,19 @@ const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     'laporan',
     'pengeluaran',
   ],
+  DOKTER_LAIN: ['dashboard', 'jadwal', 'pasien', 'antrean', 'display-antrean', 'poli', 'satusehat', 'stok'],
   PENDAFTARAN: ['dashboard', 'jadwal', 'pasien', 'antrean', 'display-antrean', 'stok'],
   KASIR: ['dashboard', 'kasir', 'laporan'],
 };
 
 export async function GET() {
-  const { errorResponse } = await requireAuth(['DOKTER', 'PENDAFTARAN', 'KASIR']);
+  const { errorResponse } = await requireAuth(['DOKTER', 'DOKTER_LAIN', 'PENDAFTARAN', 'KASIR']);
   if (errorResponse) return errorResponse;
 
   const saved = await prisma.rolePermission.findMany();
   const map: Record<UserRole, string[]> = {
     DOKTER: [...DEFAULT_ROLE_PERMISSIONS.DOKTER],
+    DOKTER_LAIN: [...DEFAULT_ROLE_PERMISSIONS.DOKTER_LAIN],
     PENDAFTARAN: [...DEFAULT_ROLE_PERMISSIONS.PENDAFTARAN],
     KASIR: [...DEFAULT_ROLE_PERMISSIONS.KASIR],
   };
@@ -55,7 +57,7 @@ export async function PATCH(request: Request) {
     const role = String(body.role || '') as UserRole;
     const permissions = Array.isArray(body.permissions) ? body.permissions.map(String) : null;
 
-    if (!['DOKTER', 'PENDAFTARAN', 'KASIR'].includes(role) || !permissions) {
+    if (!['DOKTER', 'DOKTER_LAIN', 'PENDAFTARAN', 'KASIR'].includes(role) || !permissions) {
       return NextResponse.json({ error: 'Role dan daftar wewenang wajib diisi.' }, { status: 400 });
     }
 

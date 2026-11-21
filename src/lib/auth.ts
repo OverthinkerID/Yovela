@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { prisma } from './prisma';
 
-export type UserRole = 'DOKTER' | 'PENDAFTARAN' | 'KASIR';
+export type UserRole = 'DOKTER' | 'DOKTER_LAIN' | 'PENDAFTARAN' | 'KASIR';
 
 export interface SessionUser {
   id: string;

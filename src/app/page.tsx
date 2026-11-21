@@ -89,11 +89,11 @@ export default function LandingPage() {
                 {about.bodyText}
               </p>
 
-              <div className="gsap-stagger-group grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+              <div className="gsap-stagger-group grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 items-stretch">
                 {about.pillars.map((p) => (
                   <div
                     key={p.number}
-                    className="gsap-stagger-card p-5 rounded-3xl bg-[#F3EBDD] border border-[#DFD4C0] space-y-2"
+                    className="gsap-stagger-card h-full flex flex-col p-5 rounded-3xl bg-[#F3EBDD] border border-[#DFD4C0] space-y-2"
                   >
                     <span className="font-mono text-xs font-bold text-[#E65B45]">{p.number}</span>
                     <h3 className="font-editorial text-xl font-semibold text-[#234B38]">{p.title}</h3>

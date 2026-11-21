@@ -193,23 +193,23 @@ export default function StokBhpPage() {
         </div>
 
         {/* 3 KPI Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-          <div className="bg-[#FAF7F0] rounded-3xl border border-[#E8E1D3] p-4 sm:p-5 space-y-1">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 items-stretch">
+          <div className="bg-[#FAF7F0] rounded-3xl border border-[#E8E1D3] p-4 sm:p-5 h-full flex flex-col justify-between gap-2">
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#52796F]">Total Jenis BHP</span>
             <h3 className="text-xl sm:text-2xl font-black font-mono text-[#1B4332]">{summary.total} Item</h3>
-            <p className="text-[10px] sm:text-[11px] text-[#52796F]">Terdaftar di gudang klinik</p>
+            <p className="text-[10px] sm:text-[11px] text-[#52796F] mt-auto">Terdaftar di gudang klinik</p>
           </div>
 
-          <div className="bg-[#FAF7F0] rounded-3xl border border-[#E63946]/30 p-4 sm:p-5 space-y-1">
+          <div className="bg-[#FAF7F0] rounded-3xl border border-[#E63946]/30 p-4 sm:p-5 h-full flex flex-col justify-between gap-2">
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#E63946]">Stok Menipis</span>
             <h3 className="text-xl sm:text-2xl font-black font-mono text-[#E63946]">{summary.lowStock} Item</h3>
-            <p className="text-[10px] sm:text-[11px] text-[#52796F]">Muncul di notifikasi</p>
+            <p className="text-[10px] sm:text-[11px] text-[#52796F] mt-auto">Muncul di notifikasi</p>
           </div>
 
-          <div className="col-span-2 sm:col-span-1 bg-[#1B4332] text-[#FAF7F0] rounded-3xl border border-[#2D6A4F] p-4 sm:p-5 space-y-1">
+          <div className="col-span-2 sm:col-span-1 bg-[#1B4332] text-[#FAF7F0] rounded-3xl border border-[#2D6A4F] p-4 sm:p-5 h-full flex flex-col justify-between gap-2">
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#95D5B2]">Estimasi Nilai Aset BHP</span>
             <h3 className="text-xl sm:text-2xl font-black font-mono">Rp {summary.totalAsset.toLocaleString('id-ID')}</h3>
-            <p className="text-[10px] sm:text-[11px] text-[#B7D3C4]">Total nilai persediaan aktif saat ini</p>
+            <p className="text-[10px] sm:text-[11px] text-[#B7D3C4] mt-auto">Total nilai persediaan aktif saat ini</p>
           </div>
         </div>
 
