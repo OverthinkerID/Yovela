@@ -34,6 +34,7 @@ interface ExpenseItem {
 }
 
 const EXPENSE_CATEGORIES = [
+  'Gaji Dokter',
   'Gaji Karyawan',
   'Listrik',
   'Air',
@@ -67,6 +68,12 @@ export default function LaporanKeuanganPage() {
   const [expDescription, setExpDescription] = useState('');
   const [expAmount, setExpAmount] = useState('');
   const [isSavingExp, setIsSavingExp] = useState(false);
+
+  // Kalkulator Gaji Dokter Berbasis Tarif Pelayanan & Potongan Bahan (Behel, dll)
+  const [doctorFeeRate, setDoctorFeeRate] = useState<number>(40);
+  const [selectedFeeDoctor, setSelectedFeeDoctor] = useState<string>('ALL');
+  const [serviceMaterialDeductions, setServiceMaterialDeductions] = useState<Record<string, number>>({});
+  const [isSavingDoctorFee, setIsSavingDoctorFee] = useState(false);
 
   const clinicDoctor = 'drg. Yuli Kartilla Panjaitan';
   const activeUser = currentUser?.name || 'Administrator Keuangan';
@@ -164,6 +171,89 @@ export default function LaporanKeuanganPage() {
 
     return { matchedIncome, totalExpenses, netProfit, marginPct, byCategory };
   }, [transactions, expenses, periodMode, selectedMonth, selectedYear]);
+
+  const doctorFeeCalc = useMemo(() => {
+    const periodTrx = transactions.filter((t) => {
+      const matchPeriod =
+        periodMode === 'BULANAN'
+          ? t.date.startsWith(selectedMonth)
+          : periodMode === 'TAHUNAN'
+          ? t.date.startsWith(selectedYear)
+          : true;
+      const matchDoc = selectedFeeDoctor === 'ALL' || t.doctorName === selectedFeeDoctor;
+      return matchPeriod && matchDoc;
+    });
+
+    const doctorList = Array.from(new Set(transactions.map((t) => t.doctorName).filter(Boolean)));
+    const grossRevenue = periodTrx.reduce((sum, t) => sum + (t.paidAmount ?? t.amount), 0);
+
+    const serviceMap = new Map<string, { name: string; count: number; isMaterialHeavy: boolean }>();
+    periodTrx.forEach((t) => {
+      (t.treatments || []).forEach((trtName) => {
+        const existing = serviceMap.get(trtName) || {
+          name: trtName,
+          count: 0,
+          isMaterialHeavy: /behel|ortodonti|braces|crown|tiruan|bleaching|veneer/i.test(trtName),
+        };
+        existing.count += 1;
+        serviceMap.set(trtName, existing);
+      });
+    });
+
+    const services = Array.from(serviceMap.values());
+    const totalMaterialDeduction = services.reduce(
+      (sum, srv) => sum + Math.max(0, serviceMaterialDeductions[srv.name] || 0),
+      0
+    );
+    const netBase = Math.max(0, grossRevenue - totalMaterialDeduction);
+    const doctorFeeAmount = Math.round((netBase * Math.max(0, Math.min(100, doctorFeeRate))) / 100);
+
+    return {
+      doctorList,
+      trxCount: periodTrx.length,
+      grossRevenue,
+      services,
+      totalMaterialDeduction,
+      netBase,
+      doctorFeeAmount,
+    };
+  }, [transactions, periodMode, selectedMonth, selectedYear, selectedFeeDoctor, serviceMaterialDeductions, doctorFeeRate]);
+
+  const handleRecordDoctorFee = async () => {
+    if (doctorFeeCalc.doctorFeeAmount <= 0) {
+      showToast('Nominal gaji dokter harus lebih dari Rp 0 untuk dicatat.', 'warning');
+      return;
+    }
+    setIsSavingDoctorFee(true);
+    try {
+      const docLabel = selectedFeeDoctor === 'ALL' ? clinicDoctor : selectedFeeDoctor;
+      const periodLabel = periodMode === 'BULANAN' ? selectedMonth : periodMode === 'TAHUNAN' ? selectedYear : 'Semua Periode';
+      const desc = `Fee ${docLabel} (${doctorFeeRate}% x Netto Rp ${doctorFeeCalc.netBase.toLocaleString('id-ID')} setelah potong bahan Rp ${doctorFeeCalc.totalMaterialDeduction.toLocaleString('id-ID')}) — ${periodLabel}`;
+
+      const res = await fetch('/api/expenses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          date: expDate,
+          category: 'Gaji Dokter',
+          periodType: periodMode === 'TAHUNAN' ? 'TAHUNAN' : 'BULANAN',
+          description: desc,
+          amount: doctorFeeCalc.doctorFeeAmount,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.error || 'Gagal mencatat gaji dokter.', 'error');
+        return;
+      }
+      showToast(`Gaji Dokter (Rp ${doctorFeeCalc.doctorFeeAmount.toLocaleString('id-ID')}) dicatat ke pengeluaran!`, 'success');
+      await loadExpenses();
+    } catch {
+      showToast('Gagal terhubung ke server.', 'error');
+    } finally {
+      setIsSavingDoctorFee(false);
+    }
+  };
 
   const handleAddExpense = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -345,8 +435,8 @@ export default function LaporanKeuanganPage() {
         <>
           <section className="bg-white border-b border-slate-200/80 px-4 sm:px-6 lg:px-8 xl:px-10 py-4 shadow-2xs print:hidden">
             <div className="max-w-[1440px] w-full mx-auto space-y-4">
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3.5">
-                <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-3.5">
+                <div className="col-span-2 sm:col-span-1 p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200">
                   <span className="text-[10px] uppercase font-bold text-emerald-800 tracking-wider">Kas Masuk Aktual</span>
                   <h3 className="text-xl font-black font-mono text-emerald-700 mt-1">
                     Rp {summary.totalOmset.toLocaleString('id-ID')}
@@ -458,7 +548,46 @@ export default function LaporanKeuanganPage() {
                 <span className="text-[11px] text-slate-400">Menampilkan mutasi kasir yang sah</span>
               </div>
 
-              <div className="overflow-x-auto">
+              {/* TAMPILAN KARTU MOBILE (< md) */}
+              <div className="md:hidden divide-y divide-slate-100">
+                {filteredData.length === 0 ? (
+                  <div className="text-center py-10 px-4 text-slate-400 text-xs">
+                    Tidak ditemukan transaksi dalam periode atau filter yang dipilih.
+                  </div>
+                ) : (
+                  filteredData.map((trx) => {
+                    const paid = trx.paidAmount ?? trx.amount;
+                    const rem = trx.remainingAmount ?? 0;
+                    const isPartial = trx.status === 'PARTIAL' || rem > 0;
+                    return (
+                      <div key={trx.id} className="p-4 space-y-2 text-xs">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <span className="font-mono font-bold text-[#1B4332] block">{trx.invoiceNo}</span>
+                            <p className="font-bold text-slate-800 truncate">{trx.patientName} <span className="font-mono font-normal text-slate-400">({trx.rmNumber})</span></p>
+                          </div>
+                          <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold shrink-0 ${
+                            isPartial ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-700'
+                          }`}>
+                            {isPartial ? 'CICILAN' : 'LUNAS'}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 line-clamp-2">{trx.treatments.join(', ')}</p>
+                        <div className="flex items-center justify-between pt-1">
+                          <span className="text-[10px] font-mono text-slate-400">{trx.date} • {trx.paymentMethod}</span>
+                          <div className="text-right font-mono">
+                            <strong className="text-slate-900">Rp {paid.toLocaleString('id-ID')}</strong>
+                            {rem > 0 && <span className="block text-[10px] text-amber-700">Sisa: Rp {rem.toLocaleString('id-ID')}</span>}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* TAMPILAN TABEL DESKTOP (>= md) */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
@@ -625,6 +754,109 @@ export default function LaporanKeuanganPage() {
             </div>
           </div>
 
+          {/* KALKULATOR GAJI DOKTER BERBASIS TARIF PELAYANAN & POTONGAN BAHAN (BEHEL, DLL) */}
+          <div className="bg-white rounded-3xl border border-[#DED6C5] p-5 sm:p-6 space-y-4 shadow-xs text-xs">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+              <div>
+                <h2 className="text-sm font-extrabold text-[#1B4332]">Sistem Tarif Gaji Dokter (Bagi Hasil Pelayanan Gigi)</h2>
+                <p className="text-[11px] text-[#52796F]">
+                  Hitung otomatis fee dokter dari pendapatan pelayanan gigi dikurangi biaya bahan (mis. Behel / Ortodonti / Lab)
+                </p>
+              </div>
+              <span className="px-3 py-1 rounded-full bg-[#1B4332]/10 text-[#1B4332] font-mono text-[10px] font-bold">
+                {doctorFeeCalc.trxCount} Transaksi Periode Ini
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block font-bold text-[#1B4332] mb-1">Dokter Pemeriksa</label>
+                <CustomSelect
+                  value={selectedFeeDoctor}
+                  onChange={setSelectedFeeDoctor}
+                  options={[
+                    { value: 'ALL', label: 'Semua Dokter / Klinik' },
+                    ...doctorFeeCalc.doctorList.map((d) => ({ value: d, label: d })),
+                  ]}
+                />
+              </div>
+              <div>
+                <label className="block font-bold text-[#1B4332] mb-1">Persentase Tarif Dokter (%)</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={doctorFeeRate}
+                  onChange={(e) => setDoctorFeeRate(Number(e.target.value || 0))}
+                  className="w-full px-3 py-2 rounded-xl border border-[#DED6C5] bg-slate-50 font-mono font-bold text-[#1B4332] outline-none focus:border-[#1B4332]"
+                />
+              </div>
+              <div className="p-3 rounded-2xl bg-[#FAF7F0] border border-[#DED6C5] flex flex-col justify-center">
+                <span className="text-[10px] font-bold uppercase text-[#52796F]">Estimasi Gaji Dokter ({doctorFeeRate}%)</span>
+                <strong className="text-lg font-black font-mono text-[#E63946]">
+                  Rp {doctorFeeCalc.doctorFeeAmount.toLocaleString('id-ID')}
+                </strong>
+              </div>
+            </div>
+
+            {doctorFeeCalc.services.length > 0 && (
+              <div className="space-y-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#52796F] block">
+                  Potongan Biaya Bahan / Lab per Pelayanan (Isi Rp 0 jika tanpa potongan bahan):
+                </span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+                  {doctorFeeCalc.services.map((srv) => (
+                    <div
+                      key={srv.name}
+                      className={`p-2.5 rounded-xl border flex items-center justify-between gap-2 ${
+                        srv.isMaterialHeavy ? 'bg-amber-50/70 border-amber-200' : 'bg-slate-50 border-slate-200'
+                      }`}
+                    >
+                      <div className="min-w-0">
+                        <p className="font-bold text-[#1B4332] truncate">{srv.name}</p>
+                        <p className="text-[10px] text-[#52796F]">
+                          {srv.count}x tindakan {srv.isMaterialHeavy ? '• Perlu potong bahan/alat' : ''}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <span className="text-[10px] text-slate-400 font-mono">-Rp</span>
+                        <input
+                          type="number"
+                          min={0}
+                          placeholder="0"
+                          value={serviceMaterialDeductions[srv.name] || ''}
+                          onChange={(e) =>
+                            setServiceMaterialDeductions((prev) => ({
+                              ...prev,
+                              [srv.name]: Number(e.target.value || 0),
+                            }))
+                          }
+                          className="w-28 px-2 py-1 rounded-lg border border-[#DED6C5] bg-white font-mono font-bold text-right text-[#1B4332]"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100">
+              <div className="flex flex-wrap items-center gap-4 text-[11px]">
+                <span>Pendapatan Kotor: <strong className="font-mono text-[#1B4332]">Rp {doctorFeeCalc.grossRevenue.toLocaleString('id-ID')}</strong></span>
+                <span>Potong Bahan: <strong className="font-mono text-[#E63946]">-Rp {doctorFeeCalc.totalMaterialDeduction.toLocaleString('id-ID')}</strong></span>
+                <span>Dasar Netto: <strong className="font-mono text-[#1B4332]">Rp {doctorFeeCalc.netBase.toLocaleString('id-ID')}</strong></span>
+              </div>
+              <button
+                type="button"
+                disabled={isSavingDoctorFee || doctorFeeCalc.doctorFeeAmount <= 0}
+                onClick={handleRecordDoctorFee}
+                className="px-4 py-2 rounded-xl bg-[#1B4332] hover:bg-[#2D6A4F] text-[#FAF7F0] font-bold text-xs cursor-pointer transition disabled:opacity-50"
+              >
+                {isSavingDoctorFee ? 'Mencatat...' : 'Catat Gaji Dokter ke Pengeluaran'}
+              </button>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Form Input Pengeluaran */}
             <form onSubmit={handleAddExpense} className="lg:col-span-4 bg-white rounded-3xl border border-[#DED6C5] p-5 space-y-3.5 text-xs h-fit shadow-xs">
@@ -719,7 +951,40 @@ export default function LaporanKeuanganPage() {
                     Rincian Pengeluaran Klinik ({expenses.length} Catatan)
                   </h2>
                 </div>
-                <div className="overflow-x-auto">
+                {/* TAMPILAN KARTU MOBILE (< md) */}
+                <div className="md:hidden divide-y divide-slate-100">
+                  {expenses.length === 0 ? (
+                    <div className="text-center py-8 px-4 text-slate-400 text-xs">
+                      Belum ada catatan pengeluaran pada periode ini.
+                    </div>
+                  ) : (
+                    expenses.map((item) => (
+                      <div key={item.id} className="p-4 space-y-2 text-xs">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <span className="font-bold text-[#1B4332] block">{item.category}</span>
+                            <span className="font-mono text-[10px] text-slate-400">{item.date} • {item.periodType}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteExpense(item.id)}
+                            title="Hapus pengeluaran"
+                            className="p-2 rounded-lg text-slate-400 hover:text-[#E63946] hover:bg-rose-50 cursor-pointer transition shrink-0"
+                          >
+                            <AppIcon name="trash" className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        <p className="text-slate-600 text-[11px]">{item.description}</p>
+                        <div className="text-right font-mono font-bold text-[#E63946]">
+                          Rp {item.amount.toLocaleString('id-ID')}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* TAMPILAN TABEL DESKTOP (>= md) */}
+                <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-left border-collapse text-xs">
                     <thead>
                       <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">

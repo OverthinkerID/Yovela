@@ -1,13 +1,18 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import Link from 'next/link';
 import { AppIcon } from "@/components/AppIcon";
 import { 
   Tooth, 
   ToothSurface, 
   GeneralToothCondition, 
-  ToothData 
+  ToothData,
+  SURFACE_COLORS,
+  GENERAL_CONDITION_LABELS,
+  getFdiSurfaceMap,
 } from '../../../components/Odontogram';
+import { StatusBadge } from '../../../components/ui/StatusBadge';
 import { InvoiceReceipt } from '../../../components/InvoiceReceipt';
 import { ConsentMediaModal } from '../../../components/ConsentMediaModal';
 import { CustomSelect } from '../../../components/CustomSelect';
@@ -20,9 +25,11 @@ import {
   setActivePatient 
 } from '../../../data/patientDatabase';
 import { useAuth } from '../../../context/AuthContext';
+import { useToast } from '../../../context/ToastContext';
 
 export default function DentalClinicDashboard() {
   const { currentUser } = useAuth();
+  const { showToast } = useToast();
 
   const activeDoctorName = currentUser?.role === 'DOKTER' 
     ? currentUser.name 
@@ -84,6 +91,11 @@ export default function DentalClinicDashboard() {
 
   const [activeToothModal, setActiveToothModal] = useState<number | null>(null);
   const [toothNoteInput, setToothNoteInput] = useState<string>('');
+  const [inspectedTooth, setInspectedTooth] = useState<number | null>(11);
+  const [inspectedSurface, setInspectedSurface] = useState<ToothSurface | null>(null);
+  const [mobileSection, setMobileSection] = useState<'odontogram' | 'panel'>('odontogram');
+  const [odontogramZoom, setOdontogramZoom] = useState<number>(1);
+  const [quadrantFilter, setQuadrantFilter] = useState<'ALL' | 'Q1' | 'Q2' | 'Q3' | 'Q4'>('ALL');
 
   const [odontogram, setOdontogram] = useState<Record<number, ToothData>>({});
   const [subjective, setSubjective] = useState('');
@@ -93,6 +105,10 @@ export default function DentalClinicDashboard() {
   const [prescriptionNotes, setPrescriptionNotes] = useState('Asam Mefenamat 500mg (3x1 sesudah makan, bila nyeri)');
 
   const [isCompleted, setIsCompleted] = useState(false);
+  const [isSavingRecord, setIsSavingRecord] = useState(false);
+  const [savingMode, setSavingMode] = useState<'draft' | 'finalize' | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
+  const [lastDraftSavedAt, setLastDraftSavedAt] = useState<string | null>(null);
   const [isCallingTV, setIsCallingTV] = useState(false);
 
   const refreshTreatments = async () => {
@@ -132,6 +148,17 @@ export default function DentalClinicDashboard() {
     loadFromApi();
   }, []);
 
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setActiveToothModal(null);
+        setShowTariffModal(false);
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, []);
+
   const fetchVisitHistory = async (patientId: string) => {
     setIsLoadingHistory(true);
     try {
@@ -164,10 +191,16 @@ export default function DentalClinicDashboard() {
 
     const matched = catalog.filter((t) => patient.lastSoap?.suggestedTreatments?.includes(t.id));
     setSelectedTreatments(matched.length > 0 ? matched : [catalog[0] || TREATMENTS[0]]);
-    setIsCompleted(false);
+    setIsCompleted(patient.statusKunjungan === 'Menunggu Pembayaran');
+    setValidationError(null);
+    setLastDraftSavedAt(null);
 
     if (patient.age <= 12) setDentitionView('mixed');
     else setDentitionView('adult');
+
+    const firstRecorded = Object.keys(patient.initialOdontogram || {}).map(Number).find((n) => !isNaN(n));
+    setInspectedTooth(firstRecorded || (patient.age <= 12 ? 51 : 11));
+    setInspectedSurface(null);
 
     fetchVisitHistory(patient.id);
   };
@@ -250,7 +283,69 @@ export default function DentalClinicDashboard() {
 
   const activeBoardOdontogram = previewEncounter ? previewEncounter.odontogram : odontogram;
 
+  const recordedTeethList = useMemo(() => {
+    return Object.entries(activeBoardOdontogram)
+      .filter(([, data]) => {
+        const hasCondition = data.generalCondition && data.generalCondition !== 'normal';
+        const hasSurface = Object.values(data.surfaces || {}).some(Boolean);
+        const hasNotes = Boolean(data.notes && data.notes.trim() !== '');
+        return hasCondition || hasSurface || hasNotes;
+      })
+      .map(([num]) => Number(num))
+      .sort((a, b) => a - b);
+  }, [activeBoardOdontogram]);
+
+  const inspectedToothHistory = useMemo(() => {
+    if (inspectedTooth === null) return [];
+    return visitHistory
+      .map((enc) => {
+        const td = enc.odontogram?.[inspectedTooth];
+        if (!td) return null;
+        const hasCondition = td.generalCondition && td.generalCondition !== 'normal';
+        const filledSurfaces = Object.entries(td.surfaces || {}).filter(([, v]) => Boolean(v));
+        const hasNotes = Boolean(td.notes && td.notes.trim() !== '');
+        if (!hasCondition && filledSurfaces.length === 0 && !hasNotes) return null;
+        return {
+          id: enc.id,
+          visitDate: enc.visitDate,
+          queueNumber: enc.queueNumber,
+          doctorName: enc.doctorName,
+          data: td,
+          filledSurfaces,
+        };
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null);
+  }, [visitHistory, inspectedTooth]);
+
+  const getQuadrantLabel = (tooth: number) => {
+    const q = Math.floor(tooth / 10);
+    switch (q) {
+      case 1: return 'Kuadran 1 • Kanan Atas Permanen';
+      case 2: return 'Kuadran 2 • Kiri Atas Permanen';
+      case 3: return 'Kuadran 3 • Kiri Bawah Permanen';
+      case 4: return 'Kuadran 4 • Kanan Bawah Permanen';
+      case 5: return 'Kuadran 5 • Kanan Atas Gigi Susu';
+      case 6: return 'Kuadran 6 • Kiri Atas Gigi Susu';
+      case 7: return 'Kuadran 7 • Kiri Bawah Gigi Susu';
+      case 8: return 'Kuadran 8 • Kanan Bawah Gigi Susu';
+      default: return 'Anatomi Gigi FDI';
+    }
+  };
+
+  const handleResetTooth = (tooth: number) => {
+    if (previewEncounter) return;
+    setOdontogram((prev) => {
+      const next = { ...prev };
+      delete next[tooth];
+      syncOdontogramToSoap(next);
+      return next;
+    });
+    setInspectedSurface(null);
+  };
+
   const handleSurfaceClick = (tooth: number, surface: ToothSurface) => {
+    setInspectedTooth(tooth);
+    setInspectedSurface(surface);
     if (previewEncounter) return;
     setOdontogram((prev) => {
       const current = prev[tooth] || {
@@ -282,6 +377,8 @@ export default function DentalClinicDashboard() {
   };
 
   const handleToothConditionClick = (tooth: number) => {
+    setInspectedTooth(tooth);
+    setInspectedSurface(null);
     if (previewEncounter) return;
     setActiveToothModal(tooth);
     setSelectedGeneralCondition(odontogram[tooth]?.generalCondition || 'normal');
@@ -340,15 +437,45 @@ export default function DentalClinicDashboard() {
     setTimeout(() => setIsCallingTV(false), 2200);
   };
 
-  const handleSaveMedicalRecord = async () => {
-    if (!selectedPatient?.encounterId) return;
+  const handleSaveMedicalRecord = async (mode: 'draft' | 'finalize') => {
+    if (!selectedPatient?.encounterId || isSavingRecord) return;
+    setValidationError(null);
 
+    if (mode === 'finalize') {
+      if (!subjective.trim()) {
+        const msg = 'Keluhan utama (Subjective) wajib diisi sebelum finalisasi ke kasir.';
+        setValidationError(msg);
+        setActiveTab('soap');
+        setMobileSection('panel');
+        showToast(msg, 'warning');
+        return;
+      }
+      if (!diagnosis.trim()) {
+        const msg = 'Diagnosis ICD-10 wajib dipilih sebelum finalisasi.';
+        setValidationError(msg);
+        setActiveTab('soap');
+        setMobileSection('panel');
+        showToast(msg, 'warning');
+        return;
+      }
+      if (selectedTreatments.length === 0) {
+        const msg = 'Pilih minimal 1 tindakan prosedur agar total tagihan kasir dapat dihitung.';
+        setValidationError(msg);
+        setActiveTab('billing');
+        setMobileSection('panel');
+        showToast(msg, 'warning');
+        return;
+      }
+    }
+
+    setIsSavingRecord(true);
+    setSavingMode(mode);
     try {
       const res = await fetch(`/api/encounters/${selectedPatient.encounterId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          statusKunjungan: 'Menunggu Pembayaran',
+          statusKunjungan: mode === 'finalize' ? 'Menunggu Pembayaran' : 'Sedang Diperiksa',
           subjective,
           objective,
           diagnosisIcd10: diagnosis,
@@ -361,7 +488,9 @@ export default function DentalClinicDashboard() {
       });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || 'Gagal menyimpan rekam medis.');
+        const errMsg = data.error || 'Gagal menyimpan rekam medis.';
+        setValidationError(errMsg);
+        showToast(errMsg, 'error');
         return;
       }
 
@@ -369,24 +498,35 @@ export default function DentalClinicDashboard() {
       setPatientList((prev) => prev.map((p) => (p.id === updatedPatient.id ? updatedPatient : p)));
       setSelectedPatient(updatedPatient);
       setActivePatient(updatedPatient);
-      setIsCompleted(true);
+      if (mode === 'finalize') {
+        setIsCompleted(true);
+        showToast('Rekam medis selesai & tagihan terkirim ke kasir.', 'success');
+      } else {
+        setIsCompleted(false);
+        setLastDraftSavedAt(new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }));
+        showToast('Draft pemeriksaan tersimpan di database.', 'info');
+      }
       await fetchVisitHistory(updatedPatient.id);
     } catch {
-      alert('Gagal terhubung ke server database.');
+      setValidationError('Gagal terhubung ke server database.');
+      showToast('Gagal terhubung ke server database.', 'error');
+    } finally {
+      setIsSavingRecord(false);
+      setSavingMode(null);
     }
   };
 
   return (
     <div className="flex flex-col w-full min-h-full">
       {/* BANNER PASIEN & PENCARIAN */}
-      <section className="bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-6 py-3 shadow-2xs print:hidden w-full">
+      <section className="bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-3 sm:px-6 py-3 shadow-2xs print:hidden w-full">
         <div className="w-full mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 w-full md:w-auto">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#26d4a5]/25 to-[#26d4a5]/10 border border-[#1B4332]/40 flex items-center justify-center text-[#1B4332] font-black text-xs font-mono shrink-0 shadow-2xs">
               {selectedPatient?.queueNumber || 'A-01'}
             </div>
 
-            <div className="min-w-[270px] flex-1 sm:flex-none">
+            <div className="min-w-[200px] sm:min-w-[270px] flex-1 sm:flex-none">
               <CustomSelect
                 searchable
                 value={selectedPatient?.id || ''}
@@ -460,11 +600,73 @@ export default function DentalClinicDashboard() {
       </section>
 
       {/* WORKSPACE UTAMA */}
-      <main className="w-full px-6 py-5 flex-1 print:hidden">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full">
+      <main className="w-full px-3 sm:px-6 py-4 sm:py-5 flex-1 print:hidden">
+        {/* TAB WORKSPACE MOBILE & TABLET (< lg) */}
+        <div className="lg:hidden grid grid-cols-5 gap-1 p-1 mb-4 rounded-2xl bg-[#FAF7F0] border border-[#DED6C5] text-[10px] font-bold shadow-2xs">
+          <button
+            type="button"
+            onClick={() => setMobileSection('odontogram')}
+            className={`min-h-[40px] px-1 py-1.5 rounded-xl transition cursor-pointer flex items-center justify-center gap-1 ${
+              mobileSection === 'odontogram' ? 'bg-[#1B4332] text-[#FAF7F0] shadow-xs' : 'text-[#52796F]'
+            }`}
+          >
+            <AppIcon name="tooth" className="w-3 h-3 shrink-0" />
+            <span className="truncate">Odonto</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMobileSection('panel');
+              setActiveTab('soap');
+            }}
+            className={`min-h-[40px] px-1 py-1.5 rounded-xl transition cursor-pointer flex items-center justify-center gap-1 ${
+              mobileSection === 'panel' && activeTab === 'soap' ? 'bg-[#1B4332] text-[#FAF7F0] shadow-xs' : 'text-[#52796F]'
+            }`}
+          >
+            <span>SOAP</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMobileSection('panel');
+              setActiveTab('billing');
+            }}
+            className={`min-h-[40px] px-1 py-1.5 rounded-xl transition cursor-pointer flex items-center justify-center gap-1 ${
+              mobileSection === 'panel' && activeTab === 'billing' ? 'bg-[#1B4332] text-[#FAF7F0] shadow-xs' : 'text-[#52796F]'
+            }`}
+          >
+            <span className="truncate">Tindakan</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMobileSection('panel');
+              setActiveTab('history');
+            }}
+            className={`min-h-[40px] px-1 py-1.5 rounded-xl transition cursor-pointer flex items-center justify-center gap-1 ${
+              mobileSection === 'panel' && activeTab === 'history' ? 'bg-[#1B4332] text-[#FAF7F0] shadow-xs' : 'text-[#52796F]'
+            }`}
+          >
+            <span className="truncate">E-Resep</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMobileSection('panel');
+              setActiveTab('visits');
+            }}
+            className={`min-h-[40px] px-1 py-1.5 rounded-xl transition cursor-pointer flex items-center justify-center gap-1 ${
+              mobileSection === 'panel' && activeTab === 'visits' ? 'bg-[#1B4332] text-[#FAF7F0] shadow-xs' : 'text-[#52796F]'
+            }`}
+          >
+            <span className="truncate">Riwayat</span>
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6 items-start w-full">
           
           {/* ODONTOGRAM */}
-          <section className="lg:col-span-7 bg-white rounded-3xl border border-slate-200/90 shadow-xs p-5 flex flex-col">
+          <section className={`lg:col-span-7 bg-white rounded-3xl border border-slate-200/90 shadow-xs p-3.5 sm:p-5 flex-col ${mobileSection === 'odontogram' ? 'flex' : 'hidden lg:flex'}`}>
             <div className="pb-3 border-b border-slate-100 bg-white space-y-2.5">
               <div className="flex flex-wrap justify-between items-center gap-2">
                 <div className="flex items-center gap-2">
@@ -565,26 +767,83 @@ export default function DentalClinicDashboard() {
               </div>
             )}
 
-            <div className="overflow-x-auto p-4 bg-slate-50/60 rounded-2xl border border-slate-200 shadow-inner mt-3">
-              <div className="min-w-[580px] space-y-4">
-                {(dentitionView === 'adult' || dentitionView === 'mixed') && (
+            {/* KONTROL FOKUS KUADRAN & ZOOM TABLET/MOBILE */}
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 px-1">
+              <div className="flex items-center gap-1 overflow-x-auto">
+                {(['ALL', 'Q1', 'Q2', 'Q3', 'Q4'] as const).map((qKey) => (
+                  <button
+                    key={qKey}
+                    type="button"
+                    onClick={() => setQuadrantFilter(qKey)}
+                    className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer whitespace-nowrap ${
+                      quadrantFilter === qKey
+                        ? 'bg-[#1B4332] text-[#FAF7F0] shadow-2xs'
+                        : 'bg-[#F5F1E8] text-[#52796F] hover:text-[#1B4332]'
+                    }`}
+                  >
+                    {qKey === 'ALL' ? 'Semua Kuadran' : qKey}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-1 bg-[#F5F1E8] p-1 rounded-xl border border-[#DED6C5] text-[10px] font-mono font-bold">
+                <button
+                  type="button"
+                  aria-label="Perkecil Odontogram"
+                  onClick={() => setOdontogramZoom((z) => Math.max(0.85, Number((z - 0.15).toFixed(2))))}
+                  className="px-2 py-0.5 rounded-lg hover:bg-white text-[#1B4332] cursor-pointer"
+                  title="Perkecil Odontogram"
+                >
+                  −
+                </button>
+                <button
+                  type="button"
+                  aria-label="Reset Zoom Odontogram 100%"
+                  onClick={() => setOdontogramZoom(1)}
+                  className="px-1.5 py-0.5 rounded-lg hover:bg-white text-[#1B4332] cursor-pointer"
+                  title="Reset Zoom 100%"
+                >
+                  {Math.round(odontogramZoom * 100)}%
+                </button>
+                <button
+                  type="button"
+                  aria-label="Perbesar Odontogram"
+                  onClick={() => setOdontogramZoom((z) => Math.min(1.3, Number((z + 0.15).toFixed(2))))}
+                  className="px-2 py-0.5 rounded-lg hover:bg-white text-[#1B4332] cursor-pointer"
+                  title="Perbesar Odontogram"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto touch-pan-x p-3 sm:p-4 bg-slate-50/60 rounded-2xl border border-slate-200 shadow-inner mt-2.5">
+              <div
+                className={`${quadrantFilter === 'ALL' ? 'min-w-[580px]' : 'min-w-0'} space-y-4 transition-transform duration-150`}
+                style={odontogramZoom !== 1 ? { transform: `scale(${odontogramZoom})`, transformOrigin: 'top left', width: `${Math.round(100 / odontogramZoom)}%` } : undefined}
+              >
+                {(dentitionView === 'adult' || dentitionView === 'mixed') && (quadrantFilter === 'ALL' || quadrantFilter === 'Q1' || quadrantFilter === 'Q2') && (
                   <div>
                     <div className="flex justify-between text-[9px] font-bold text-slate-400 uppercase px-2 mb-1">
-                      <span>Kanan Pasien (Q1 • Distal ← → Mesial)</span>
-                      <span>RAHANG ATAS PERMANEN (MAXILLA)</span>
-                      <span>Kiri Pasien (Q2 • Mesial ← → Distal)</span>
+                      {(quadrantFilter === 'ALL' || quadrantFilter === 'Q1') && <span>Kanan Pasien (Q1 • Distal ← → Mesial)</span>}
+                      {quadrantFilter === 'ALL' && <span>RAHANG ATAS PERMANEN (MAXILLA)</span>}
+                      {(quadrantFilter === 'ALL' || quadrantFilter === 'Q2') && <span>Kiri Pasien (Q2 • Mesial ← → Distal)</span>}
                     </div>
                     <div className="flex justify-center border-b border-dashed border-slate-200 pb-3">
-                      <div className="flex border-r-2 border-slate-300 pr-2">
-                        {q1.map((num) => (
-                          <Tooth key={num} toothNumber={num} data={activeBoardOdontogram[num]} onSurfaceClick={handleSurfaceClick} onToothConditionClick={handleToothConditionClick} />
-                        ))}
-                      </div>
-                      <div className="flex pl-2">
-                        {q2.map((num) => (
-                          <Tooth key={num} toothNumber={num} data={activeBoardOdontogram[num]} onSurfaceClick={handleSurfaceClick} onToothConditionClick={handleToothConditionClick} />
-                        ))}
-                      </div>
+                      {(quadrantFilter === 'ALL' || quadrantFilter === 'Q1') && (
+                        <div className={`flex ${quadrantFilter === 'ALL' ? 'border-r-2 border-slate-300 pr-2' : ''}`}>
+                          {q1.map((num) => (
+                            <Tooth key={num} toothNumber={num} data={activeBoardOdontogram[num]} isSelected={inspectedTooth === num} selectedSurface={inspectedTooth === num ? inspectedSurface : null} onSurfaceClick={handleSurfaceClick} onToothConditionClick={handleToothConditionClick} />
+                          ))}
+                        </div>
+                      )}
+                      {(quadrantFilter === 'ALL' || quadrantFilter === 'Q2') && (
+                        <div className={`flex ${quadrantFilter === 'ALL' ? 'pl-2' : ''}`}>
+                          {q2.map((num) => (
+                            <Tooth key={num} toothNumber={num} data={activeBoardOdontogram[num]} isSelected={inspectedTooth === num} selectedSurface={inspectedTooth === num ? inspectedSurface : null} onSurfaceClick={handleSurfaceClick} onToothConditionClick={handleToothConditionClick} />
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -595,57 +854,214 @@ export default function DentalClinicDashboard() {
                     <div className="flex justify-center border-b border-amber-200 pb-2">
                       <div className="flex border-r-2 border-amber-300 pr-2">
                         {q5.map((num) => (
-                          <Tooth key={num} toothNumber={num} isDeciduous data={activeBoardOdontogram[num]} onSurfaceClick={handleSurfaceClick} onToothConditionClick={handleToothConditionClick} />
+                          <Tooth key={num} toothNumber={num} isDeciduous data={activeBoardOdontogram[num]} isSelected={inspectedTooth === num} selectedSurface={inspectedTooth === num ? inspectedSurface : null} onSurfaceClick={handleSurfaceClick} onToothConditionClick={handleToothConditionClick} />
                         ))}
                       </div>
                       <div className="flex pl-2">
                         {q6.map((num) => (
-                          <Tooth key={num} toothNumber={num} isDeciduous data={activeBoardOdontogram[num]} onSurfaceClick={handleSurfaceClick} onToothConditionClick={handleToothConditionClick} />
+                          <Tooth key={num} toothNumber={num} isDeciduous data={activeBoardOdontogram[num]} isSelected={inspectedTooth === num} selectedSurface={inspectedTooth === num ? inspectedSurface : null} onSurfaceClick={handleSurfaceClick} onToothConditionClick={handleToothConditionClick} />
                         ))}
                       </div>
                     </div>
                     <div className="flex justify-center pt-1">
                       <div className="flex border-r-2 border-amber-300 pr-2">
                         {q8.map((num) => (
-                          <Tooth key={num} toothNumber={num} isDeciduous data={activeBoardOdontogram[num]} onSurfaceClick={handleSurfaceClick} onToothConditionClick={handleToothConditionClick} />
+                          <Tooth key={num} toothNumber={num} isDeciduous data={activeBoardOdontogram[num]} isSelected={inspectedTooth === num} selectedSurface={inspectedTooth === num ? inspectedSurface : null} onSurfaceClick={handleSurfaceClick} onToothConditionClick={handleToothConditionClick} />
                         ))}
                       </div>
                       <div className="flex pl-2">
                         {q7.map((num) => (
-                          <Tooth key={num} toothNumber={num} isDeciduous data={activeBoardOdontogram[num]} onSurfaceClick={handleSurfaceClick} onToothConditionClick={handleToothConditionClick} />
+                          <Tooth key={num} toothNumber={num} isDeciduous data={activeBoardOdontogram[num]} isSelected={inspectedTooth === num} selectedSurface={inspectedTooth === num ? inspectedSurface : null} onSurfaceClick={handleSurfaceClick} onToothConditionClick={handleToothConditionClick} />
                         ))}
                       </div>
                     </div>
                   </div>
                 )}
 
-                {(dentitionView === 'adult' || dentitionView === 'mixed') && (
+                {(dentitionView === 'adult' || dentitionView === 'mixed') && (quadrantFilter === 'ALL' || quadrantFilter === 'Q4' || quadrantFilter === 'Q3') && (
                   <div>
                     <div className="flex justify-center pt-2">
-                      <div className="flex border-r-2 border-slate-300 pr-2">
-                        {q4.map((num) => (
-                          <Tooth key={num} toothNumber={num} data={activeBoardOdontogram[num]} onSurfaceClick={handleSurfaceClick} onToothConditionClick={handleToothConditionClick} />
-                        ))}
-                      </div>
-                      <div className="flex pl-2">
-                        {q3.map((num) => (
-                          <Tooth key={num} toothNumber={num} data={activeBoardOdontogram[num]} onSurfaceClick={handleSurfaceClick} onToothConditionClick={handleToothConditionClick} />
-                        ))}
-                      </div>
+                      {(quadrantFilter === 'ALL' || quadrantFilter === 'Q4') && (
+                        <div className={`flex ${quadrantFilter === 'ALL' ? 'border-r-2 border-slate-300 pr-2' : ''}`}>
+                          {q4.map((num) => (
+                            <Tooth key={num} toothNumber={num} data={activeBoardOdontogram[num]} isSelected={inspectedTooth === num} selectedSurface={inspectedTooth === num ? inspectedSurface : null} onSurfaceClick={handleSurfaceClick} onToothConditionClick={handleToothConditionClick} />
+                          ))}
+                        </div>
+                      )}
+                      {(quadrantFilter === 'ALL' || quadrantFilter === 'Q3') && (
+                        <div className={`flex ${quadrantFilter === 'ALL' ? 'pl-2' : ''}`}>
+                          {q3.map((num) => (
+                            <Tooth key={num} toothNumber={num} data={activeBoardOdontogram[num]} isSelected={inspectedTooth === num} selectedSurface={inspectedTooth === num ? inspectedSurface : null} onSurfaceClick={handleSurfaceClick} onToothConditionClick={handleToothConditionClick} />
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <div className="flex justify-between text-[9px] font-bold text-slate-400 uppercase px-2 mt-2">
-                      <span>Kanan Pasien (Q4 • Distal ← → Mesial)</span>
-                      <span>RAHANG BAWAH PERMANEN (MANDIBULA)</span>
-                      <span>Kiri Pasien (Q3 • Mesial ← → Distal)</span>
+                      {(quadrantFilter === 'ALL' || quadrantFilter === 'Q4') && <span>Kanan Pasien (Q4 • Distal ← → Mesial)</span>}
+                      {quadrantFilter === 'ALL' && <span>RAHANG BAWAH PERMANEN (MANDIBULA)</span>}
+                      {(quadrantFilter === 'ALL' || quadrantFilter === 'Q3') && <span>Kiri Pasien (Q3 • Mesial ← → Distal)</span>}
                     </div>
                   </div>
                 )}
               </div>
             </div>
+
+            {/* RINGKASAN GIGI BERMASALAH (QUICK JUMP) */}
+            {recordedTeethList.length > 0 && (
+              <div className="mt-3 flex flex-wrap items-center gap-1.5 px-1">
+                <span className="text-[10px] font-bold text-slate-500 mr-1">Temuan Aktif:</span>
+                {recordedTeethList.map((tNum) => (
+                  <button
+                    key={tNum}
+                    type="button"
+                    onClick={() => {
+                      setInspectedTooth(tNum);
+                      setInspectedSurface(null);
+                    }}
+                    className={`px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold transition cursor-pointer border ${
+                      inspectedTooth === tNum
+                        ? 'bg-[#E63946] text-white border-[#E63946] shadow-2xs'
+                        : 'bg-[#F5F1E8] text-[#1B4332] border-[#DED6C5] hover:border-[#1B4332]'
+                    }`}
+                  >
+                    #{tNum}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* PANEL INSPEKTOR GIGI & PERMUKAAN FDI + RIWAYAT LINTAS KUNJUNGAN */}
+            {inspectedTooth !== null && (() => {
+              const td = activeBoardOdontogram[inspectedTooth];
+              const cond = td?.generalCondition || 'normal';
+              const fdiMap = getFdiSurfaceMap(inspectedTooth);
+              const surfaceEntries = [
+                fdiMap.center,
+                fdiMap.right,
+                fdiMap.left,
+                fdiMap.top,
+                fdiMap.bottom,
+              ];
+
+              return (
+                <div className="mt-3 p-4 rounded-2xl bg-[#FAF7F0] border border-[#DED6C5] space-y-3 text-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#E8E1D3] pb-2.5">
+                    <div className="flex items-center gap-2.5">
+                      <span className="w-9 h-9 rounded-xl bg-[#1B4332] text-[#FAF7F0] font-mono font-black flex items-center justify-center text-sm shadow-2xs">
+                        #{inspectedTooth}
+                      </span>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-extrabold text-[#1B4332] text-xs">Inspektor Gigi #{inspectedTooth}</h4>
+                          <StatusBadge
+                            label={GENERAL_CONDITION_LABELS[cond]}
+                            tone={cond === 'normal' ? 'neutral' : cond === 'missing' || cond === 'radix' ? 'tomato' : 'forest'}
+                          />
+                        </div>
+                        <p className="text-[10px] text-[#52796F]">{getQuadrantLabel(inspectedTooth)}</p>
+                      </div>
+                    </div>
+
+                    {!previewEncounter && (
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleToothConditionClick(inspectedTooth)}
+                          className="px-2.5 py-1.5 rounded-xl bg-[#1B4332] hover:bg-[#2D6A4F] text-[#FAF7F0] font-bold text-[10px] cursor-pointer transition"
+                        >
+                          Edit Kondisi &amp; Catatan
+                        </button>
+                        {td && (
+                          <button
+                            type="button"
+                            onClick={() => handleResetTooth(inspectedTooth)}
+                            className="px-2.5 py-1.5 rounded-xl bg-white hover:bg-[#E63946]/10 border border-[#DED6C5] text-[#E63946] font-bold text-[10px] cursor-pointer transition"
+                          >
+                            Reset Gigi
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Detail 5 Permukaan Anatomi */}
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+                    {surfaceEntries.map((item) => {
+                      const val = td?.surfaces?.[item.surface] || null;
+                      const colorInfo = val ? SURFACE_COLORS[val] : null;
+                      const isActiveSurf = inspectedSurface === item.surface;
+                      return (
+                        <button
+                          key={item.surface}
+                          type="button"
+                          onClick={() => handleSurfaceClick(inspectedTooth, item.surface)}
+                          className={`p-2 rounded-xl border text-left transition cursor-pointer ${
+                            isActiveSurf
+                              ? 'border-[#1B4332] bg-white ring-1 ring-[#1B4332]'
+                              : 'border-[#E8E1D3] bg-white/70 hover:bg-white'
+                          }`}
+                        >
+                          <span className="block text-[9px] font-bold uppercase text-[#52796F] truncate">
+                            {item.label}
+                          </span>
+                          <span className="mt-1 flex items-center gap-1.5 text-[10px] font-bold text-[#1B4332] truncate">
+                            <span
+                              className="w-2.5 h-2.5 rounded-full border border-slate-300 shrink-0"
+                              style={{ backgroundColor: colorInfo ? colorInfo.fill : '#ffffff' }}
+                            />
+                            <span className="truncate">{colorInfo ? colorInfo.label.split(' ')[0] : 'Sehat'}</span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {td?.notes && (
+                    <div className="p-2.5 rounded-xl bg-white border border-[#E8E1D3] text-[11px] text-[#1B4332]">
+                      <strong className="text-[10px] uppercase text-[#52796F] mr-1.5">Catatan Klinis:</strong>
+                      {td.notes}
+                    </div>
+                  )}
+
+                  {/* Riwayat Lintas Kunjungan Per Gigi */}
+                  <div className="pt-1 border-t border-[#E8E1D3] space-y-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#52796F] block">
+                      Riwayat Lintas Kunjungan Gigi #{inspectedTooth} ({inspectedToothHistory.length})
+                    </span>
+                    {inspectedToothHistory.length === 0 ? (
+                      <p className="text-[10px] text-[#52796F]">Belum ada riwayat tindakan atau temuan terdokumentasi untuk gigi #{inspectedTooth}.</p>
+                    ) : (
+                      <div className="space-y-1.5 max-h-28 overflow-y-auto pr-1">
+                        {inspectedToothHistory.map((hist) => (
+                          <div key={hist.id} className="p-2 rounded-xl bg-white border border-[#E8E1D3] flex flex-wrap items-center justify-between gap-2 text-[10px]">
+                            <div className="min-w-0">
+                              <span className="font-mono font-bold text-[#1B4332]">{hist.visitDate}</span>
+                              <span className="mx-1.5 text-slate-300">•</span>
+                              <span className="text-[#52796F]">{hist.doctorName}</span>
+                              {hist.data.notes && (
+                                <p className="text-[#1B4332] truncate mt-0.5">Catatan: {hist.data.notes}</p>
+                              )}
+                            </div>
+                            <div className="flex flex-wrap gap-1">
+                              {hist.data.generalCondition && hist.data.generalCondition !== 'normal' && (
+                                <StatusBadge label={GENERAL_CONDITION_LABELS[hist.data.generalCondition]} tone="forest" />
+                              )}
+                              {hist.filledSurfaces.map(([surf, val]) => (
+                                <StatusBadge key={surf} label={`${surf}: ${val}`} tone="neutral" />
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
           </section>
 
           {/* SOAP & BILLING */}
-          <section className="lg:col-span-5 bg-white rounded-3xl border border-slate-200/90 shadow-xs p-5 flex flex-col">
+          <section className={`lg:col-span-5 bg-white rounded-3xl border border-slate-200/90 shadow-xs p-4 sm:p-5 flex-col ${mobileSection === 'panel' ? 'flex' : 'hidden lg:flex'}`}>
             <div className="pb-3 border-b border-slate-100 bg-white">
               <div className="grid grid-cols-4 bg-slate-100 p-1 rounded-2xl text-[11px] font-bold gap-1">
                 <button
@@ -911,33 +1327,105 @@ export default function DentalClinicDashboard() {
             </div>
 
             <div className="pt-3 border-t border-slate-100 space-y-2.5 bg-white">
-              <div className="flex justify-between items-baseline bg-slate-50 p-2.5 rounded-2xl border border-slate-200">
-                <span className="text-xs font-bold text-slate-600">Total Tagihan:</span>
-                <span className="text-lg font-black font-mono text-[#1B4332]">
-                  Rp {totalBilling.toLocaleString('id-ID')}
-                </span>
+              {/* RINGKASAN INTEGRASI SOAP, TINDAKAN, E-RESEP & TAGIHAN */}
+              <div className="p-3 rounded-2xl bg-[#FAF7F0] border border-[#DED6C5] space-y-2 text-[11px]">
+                <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-[#E8E1D3] pb-2">
+                  <span className="font-bold text-[#1B4332]">Ringkasan Integrasi Kunjungan</span>
+                  <div className="flex items-center gap-1.5 font-mono text-[10px]">
+                    <span className={`px-2 py-0.5 rounded-full font-bold ${subjective.trim() ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+                      SOAP: {subjective.trim() ? 'Lengkap' : 'Belum S'}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full bg-white border border-[#DED6C5] font-bold text-[#1B4332]">
+                      {diagnosis || '-'}
+                    </span>
+                    <span className={`px-2 py-0.5 rounded-full font-bold ${prescriptionNotes.trim() ? 'bg-[#1B4332]/10 text-[#1B4332]' : 'bg-slate-100 text-slate-500'}`}>
+                      {prescriptionNotes.trim() ? 'E-Resep ✓' : 'Tanpa Resep'}
+                    </span>
+                  </div>
+                </div>
+
+                {selectedTreatments.length > 0 ? (
+                  <div className="space-y-1 max-h-20 overflow-y-auto pr-1">
+                    {selectedTreatments.map((t) => (
+                      <div key={t.id} className="flex justify-between items-center text-[10px] text-[#52796F]">
+                        <span className="truncate pr-2">• {t.name}</span>
+                        <span className="font-mono font-bold text-[#1B4332] shrink-0">Rp {t.price.toLocaleString('id-ID')}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[10px] text-[#E63946] font-semibold">Belum ada tindakan prosedur dipilih.</p>
+                )}
+
+                <div className="flex justify-between items-baseline pt-1.5 border-t border-[#E8E1D3]">
+                  <span className="text-xs font-bold text-[#1B4332]">Total Estimasi Kasir:</span>
+                  <span className="text-lg font-black font-mono text-[#1B4332]">
+                    Rp {totalBilling.toLocaleString('id-ID')}
+                  </span>
+                </div>
               </div>
 
+              {validationError && (
+                <div className="p-2.5 rounded-xl bg-[#E63946]/10 border border-[#E63946]/30 text-[#E63946] text-[11px] font-bold flex items-center gap-2">
+                  <AppIcon name="triangle-exclamation" className="shrink-0" />
+                  <span>{validationError}</span>
+                </div>
+              )}
+
+              {lastDraftSavedAt && !isCompleted && (
+                <p className="text-[10px] text-[#2D6A4F] font-semibold text-center">
+                  Draft terakhir tersimpan pukul {lastDraftSavedAt} WIB
+                </p>
+              )}
+
               {!isCompleted ? (
-                <button
-                  type="button"
-                  onClick={handleSaveMedicalRecord}
-                  className="w-full bg-[#E63946] hover:bg-[#D62828] text-white font-bold py-2.5 rounded-2xl flex items-center justify-center gap-2 shadow-sm transition text-xs cursor-pointer active:scale-98"
-                >
-                  <AppIcon name="floppy-disk" /> Simpan Rekam Medis Pasien
-                </button>
-              ) : (
-                <div className="space-y-1.5">
-                  <div className="p-2 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-bold text-center">
-                    <AppIcon name="check" className="text-emerald-600 mr-1" /> Rekam Medis Selesai & Terkirim ke Kasir
-                  </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <button
                     type="button"
-                    onClick={() => window.print()}
-                    className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2 rounded-xl flex items-center justify-center gap-2 text-xs cursor-pointer shadow-sm"
+                    disabled={isSavingRecord || !selectedPatient?.encounterId}
+                    onClick={() => handleSaveMedicalRecord('draft')}
+                    className="w-full bg-white hover:bg-[#F5F1E8] border border-[#DED6C5] text-[#1B4332] font-bold py-2.5 rounded-2xl flex items-center justify-center gap-1.5 transition text-xs cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    <AppIcon name="print" /> Cetak Struk Kasir Termal 80mm
+                    <AppIcon name="floppy-disk" />
+                    <span>{isSavingRecord && savingMode === 'draft' ? 'Menyimpan...' : 'Simpan Draft'}</span>
                   </button>
+                  <button
+                    type="button"
+                    disabled={isSavingRecord || !selectedPatient?.encounterId}
+                    onClick={() => handleSaveMedicalRecord('finalize')}
+                    className="w-full bg-[#E63946] hover:bg-[#D62828] text-white font-bold py-2.5 rounded-2xl flex items-center justify-center gap-1.5 shadow-sm transition text-xs cursor-pointer active:scale-98 disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    <AppIcon name="check" />
+                    <span>{isSavingRecord && savingMode === 'finalize' ? 'Mengirim...' : 'Finalisasi ke Kasir'}</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="p-2.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-bold flex items-center justify-between gap-2">
+                    <span><AppIcon name="check" className="text-emerald-600 mr-1" /> Rekam Medis Selesai &amp; Terkirim ke Kasir</span>
+                    <button
+                      type="button"
+                      onClick={() => setIsCompleted(false)}
+                      className="text-[10px] underline text-[#1B4332] cursor-pointer"
+                    >
+                      Revisi
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => window.print()}
+                      className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2 rounded-xl flex items-center justify-center gap-1.5 text-xs cursor-pointer shadow-sm"
+                    >
+                      <AppIcon name="print" /> Cetak Struk
+                    </button>
+                    <Link
+                      href="/kasir"
+                      className="w-full bg-[#1B4332] hover:bg-[#2D6A4F] text-[#FAF7F0] font-bold py-2 rounded-xl flex items-center justify-center gap-1.5 text-xs shadow-sm"
+                    >
+                      <AppIcon name="cash-register" /> Buka Kasir
+                    </Link>
+                  </div>
                 </div>
               )}
             </div>
@@ -946,10 +1434,17 @@ export default function DentalClinicDashboard() {
         </div>
       </main>
 
-      {/* MODAL ANOTASI GIGI */}
+      {/* MODAL ANOTASI GIGI (BOTTOM SHEET DI MOBILE, MODAL DI DESKTOP) */}
       {activeToothModal !== null && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 print:hidden">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+        <div
+          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 print:hidden"
+          onClick={() => setActiveToothModal(null)}
+        >
+          <div
+            className="bg-white rounded-t-3xl sm:rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[85vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 bg-slate-300 rounded-full mx-auto sm:hidden" />
             <div className="flex justify-between items-center border-b pb-3">
               <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
                 <AppIcon name="tooth" className="text-[#2D6A4F]" />
@@ -958,7 +1453,7 @@ export default function DentalClinicDashboard() {
               <button 
                 type="button"
                 onClick={() => setActiveToothModal(null)} 
-                className="text-slate-400 hover:text-slate-600 cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 cursor-pointer p-1"
               >
                 <AppIcon name="xmark" className="text-sm" />
               </button>
@@ -978,7 +1473,7 @@ export default function DentalClinicDashboard() {
                     key={cond.id}
                     type="button"
                     onClick={() => setSelectedGeneralCondition(cond.id as GeneralToothCondition)}
-                    className={`p-2 rounded-xl border text-left font-semibold transition cursor-pointer ${
+                    className={`min-h-[44px] p-2.5 rounded-xl border text-left font-semibold transition cursor-pointer ${
                       selectedGeneralCondition === cond.id ? 'border-[#1B4332] bg-[#1B4332]/10 font-bold' : 'border-slate-200'
                     }`}
                   >

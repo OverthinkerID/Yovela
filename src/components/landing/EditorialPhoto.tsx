@@ -113,7 +113,7 @@ export const EditorialPhoto: React.FC<EditorialPhotoProps> = ({
 
       <div className="relative z-10 flex items-end justify-between gap-3 pt-3 border-t border-current/15">
         <p className="text-[11px] font-medium opacity-85 leading-snug">{caption || alt}</p>
-        <span className="text-[10px] font-mono opacity-60 shrink-0">PHOTO SLOT</span>
+        <span className="text-[10px] font-mono opacity-70 shrink-0">ILUSTRASI</span>
       </div>
     </div>
   );

@@ -14,14 +14,14 @@ export const DoctorProfile: React.FC<DoctorProfileProps> = ({ doctor }) => {
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center bg-[#FAF6EE] border border-[#DFD4C0] rounded-[36px] p-6 sm:p-10 lg:p-12 shadow-sm">
       {/* Kiri: Foto Dokter */}
       <div className="lg:col-span-5">
-        <div className="gsap-image-mask rounded-[28px] overflow-hidden border border-[#DFD4C0] shadow-lg">
+        <div className="gsap-image-mask rounded-[28px] overflow-hidden border border-[#DFD4C0] shadow-lg max-w-[400px] mx-auto">
           <EditorialPhoto
             src={doctor.imageSrc}
             alt={doctor.name}
             caption={doctor.credentialPlaceholder}
             badge={doctor.isPlaceholder ? 'Editable Doctor Profile' : 'Lead Dentist'}
             variant="doctor"
-            className="h-[360px] sm:h-[440px] w-full"
+            className="aspect-[3/4] w-full"
           />
         </div>
       </div>

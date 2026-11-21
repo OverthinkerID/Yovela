@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { AppIcon } from './AppIcon';
+import { useTheme } from '../context/ThemeContext';
 
 export interface CustomSelectOption {
   value: string;
@@ -28,6 +29,8 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
   className = '',
   dark = false,
 }) => {
+  const { theme } = useTheme();
+  const isDark = dark || theme === 'dark';
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
@@ -59,7 +62,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
         className={`w-full flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl border text-left text-xs font-semibold transition cursor-pointer ${
-          dark
+          isDark
             ? 'bg-[#143326] border-[#2D6A4F] text-[#FAF7F0] hover:border-[#40916C]'
             : 'bg-[#FAF7F0] border-[#DED6C5] text-[#1B4332] hover:border-[#2D6A4F] hover:bg-white'
         } ${isOpen ? 'ring-2 ring-[#2D6A4F]/25 border-[#2D6A4F]' : ''}`}
@@ -70,7 +73,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
         <AppIcon
           name="chevron-down"
           className={`w-3.5 h-3.5 shrink-0 transition-transform duration-200 ${
-            dark ? 'text-[#A3C9B5]' : 'text-[#52796F]'
+            isDark ? 'text-[#A3C9B5]' : 'text-[#52796F]'
           } ${isOpen ? 'rotate-180' : ''}`}
         />
       </button>
@@ -78,13 +81,13 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
       {isOpen && (
         <div
           className={`absolute left-0 right-0 mt-1.5 rounded-2xl border shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100 ${
-            dark
+            isDark
               ? 'bg-[#10291F] border-[#2D6A4F] text-[#FAF7F0]'
               : 'bg-white border-[#DED6C5] text-[#1B4332]'
           }`}
         >
           {searchable && (
-            <div className={`p-2 border-b ${dark ? 'border-[#2D6A4F]/60' : 'border-[#EDE7DA]'}`}>
+            <div className={`p-2 border-b ${isDark ? 'border-[#2D6A4F]/60' : 'border-[#EDE7DA]'}`}>
               <div className="relative">
                 <span className="absolute left-2.5 top-2 text-[#52796F]">
                   <AppIcon name="magnifying-glass" className="w-3.5 h-3.5" />
@@ -96,7 +99,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Cari..."
                   className={`w-full pl-8 pr-3 py-1.5 rounded-lg text-xs outline-none ${
-                    dark
+                    isDark
                       ? 'bg-[#1B4332] text-[#FAF7F0] placeholder-[#8FB8A3]'
                       : 'bg-[#F5F1E8] text-[#1B4332] placeholder-[#6B7F73]'
                   }`}
@@ -123,7 +126,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
                     className={`w-full px-3 py-2 rounded-xl text-left text-xs flex items-center justify-between gap-2 transition cursor-pointer ${
                       isSelected
                         ? 'bg-[#1B4332] text-[#FAF7F0] font-bold'
-                        : dark
+                        : isDark
                         ? 'hover:bg-[#1B4332] text-[#E6EFE9]'
                         : 'hover:bg-[#F5F1E8] text-[#1B4332]'
                     }`}

@@ -18,10 +18,21 @@ export interface ToothData {
   notes?: string;
 }
 
+export const GENERAL_CONDITION_LABELS: Record<GeneralToothCondition, string> = {
+  normal: 'Normal / Erupsi',
+  missing: 'Missing / Hilang (X)',
+  radix: 'Radix / Sisa Akar (R)',
+  impacted: 'Impaksi / Tertanam',
+  rct: 'PSA / Endodontik (RCT)',
+  full_crown: 'Mahkota / Crown (CRN)',
+};
+
 interface ToothProps {
   toothNumber: number;
   data?: ToothData;
   isDeciduous?: boolean;
+  isSelected?: boolean;
+  selectedSurface?: ToothSurface | null;
   onSurfaceClick: (toothNumber: number, surface: ToothSurface) => void;
   onToothConditionClick: (toothNumber: number) => void;
 }
@@ -41,7 +52,7 @@ export const SURFACE_COLORS: Record<string, { fill: string; stroke: string; labe
  * - Rahang Atas (Q1, Q2, Q5, Q6): Bukal/Labial di ATAS, Palatal/Lingual di BAWAH.
  * - Rahang Bawah (Q3, Q4, Q7, Q8): Lingual di ATAS (menuju lidah), Bukal/Labial di BAWAH.
  */
-function getFdiSurfaceMap(toothNumber: number): {
+export function getFdiSurfaceMap(toothNumber: number): {
   top: { surface: ToothSurface; label: string };
   bottom: { surface: ToothSurface; label: string };
   left: { surface: ToothSurface; label: string };
@@ -79,6 +90,8 @@ export const Tooth: React.FC<ToothProps> = ({
   toothNumber,
   data,
   isDeciduous = false,
+  isSelected = false,
+  selectedSurface = null,
   onSurfaceClick,
   onToothConditionClick,
 }) => {
@@ -114,7 +127,9 @@ export const Tooth: React.FC<ToothProps> = ({
         onClick={() => onToothConditionClick(toothNumber)}
         title={`Status & Catatan Gigi #${toothNumber}`}
         className={`text-[10px] font-mono font-bold px-1.5 py-0.5 mb-1 rounded-md cursor-pointer transition-all duration-150 transform group-hover:scale-110 ${
-          isDeciduous
+          isSelected
+            ? 'bg-[#E63946] text-white font-black shadow-sm ring-2 ring-[#E63946]/30'
+            : isDeciduous
             ? 'bg-amber-100 text-amber-900 hover:bg-amber-200 border border-amber-300'
             : generalCondition !== 'normal'
             ? 'bg-[#1B4332] text-[#FAF7F0] font-black shadow-xs'
@@ -127,16 +142,20 @@ export const Tooth: React.FC<ToothProps> = ({
       {/* Kotak Gigi dengan Orientasi Anatomi FDI */}
       <div
         className={`relative p-1 rounded-xl bg-white border cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-md hover:border-[#1B4332] ${
-          isImpacted ? 'border-dashed border-amber-500 bg-amber-50/40' : 'border-slate-200 shadow-2xs'
-        } ${isCrown ? 'ring-2 ring-amber-400 bg-amber-50/20' : ''}`}
+          isSelected
+            ? 'border-[#E63946] ring-2 ring-[#E63946]/40 shadow-md'
+            : isImpacted
+            ? 'border-dashed border-amber-500 bg-amber-50/40'
+            : 'border-slate-200 shadow-2xs'
+        } ${isCrown && !isSelected ? 'ring-2 ring-amber-400 bg-amber-50/20' : ''}`}
       >
         <svg viewBox="0 0 100 100" className="w-9 h-9 md:w-10 md:h-10">
           {/* 1. Segmen Atas (Bukal/Labial di Rahang Atas, Lingual di Rahang Bawah) */}
           <polygon
             points="10,10 90,10 70,30 30,30"
             fill={getSurfaceColor(surfaceMap.top.surface)}
-            stroke="#94a3b8"
-            strokeWidth="1.5"
+            stroke={isSelected && selectedSurface === surfaceMap.top.surface ? '#1B4332' : '#94a3b8'}
+            strokeWidth={isSelected && selectedSurface === surfaceMap.top.surface ? '3' : '1.5'}
             className="tooth-segment"
             onClick={() => onSurfaceClick(toothNumber, surfaceMap.top.surface)}
           >
@@ -147,8 +166,8 @@ export const Tooth: React.FC<ToothProps> = ({
           <polygon
             points="90,10 90,90 70,70 70,30"
             fill={getSurfaceColor(surfaceMap.right.surface)}
-            stroke="#94a3b8"
-            strokeWidth="1.5"
+            stroke={isSelected && selectedSurface === surfaceMap.right.surface ? '#1B4332' : '#94a3b8'}
+            strokeWidth={isSelected && selectedSurface === surfaceMap.right.surface ? '3' : '1.5'}
             className="tooth-segment"
             onClick={() => onSurfaceClick(toothNumber, surfaceMap.right.surface)}
           >
@@ -159,8 +178,8 @@ export const Tooth: React.FC<ToothProps> = ({
           <polygon
             points="90,90 10,90 30,70 70,70"
             fill={getSurfaceColor(surfaceMap.bottom.surface)}
-            stroke="#94a3b8"
-            strokeWidth="1.5"
+            stroke={isSelected && selectedSurface === surfaceMap.bottom.surface ? '#1B4332' : '#94a3b8'}
+            strokeWidth={isSelected && selectedSurface === surfaceMap.bottom.surface ? '3' : '1.5'}
             className="tooth-segment"
             onClick={() => onSurfaceClick(toothNumber, surfaceMap.bottom.surface)}
           >
@@ -171,8 +190,8 @@ export const Tooth: React.FC<ToothProps> = ({
           <polygon
             points="10,90 10,10 30,30 30,70"
             fill={getSurfaceColor(surfaceMap.left.surface)}
-            stroke="#94a3b8"
-            strokeWidth="1.5"
+            stroke={isSelected && selectedSurface === surfaceMap.left.surface ? '#1B4332' : '#94a3b8'}
+            strokeWidth={isSelected && selectedSurface === surfaceMap.left.surface ? '3' : '1.5'}
             className="tooth-segment"
             onClick={() => onSurfaceClick(toothNumber, surfaceMap.left.surface)}
           >
@@ -183,8 +202,8 @@ export const Tooth: React.FC<ToothProps> = ({
           <polygon
             points="30,30 70,30 70,70 30,70"
             fill={getSurfaceColor(surfaceMap.center.surface)}
-            stroke="#94a3b8"
-            strokeWidth="1.5"
+            stroke={isSelected && selectedSurface === surfaceMap.center.surface ? '#1B4332' : '#94a3b8'}
+            strokeWidth={isSelected && selectedSurface === surfaceMap.center.surface ? '3' : '1.5'}
             className="tooth-segment"
             onClick={() => onSurfaceClick(toothNumber, surfaceMap.center.surface)}
           >

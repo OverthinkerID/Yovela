@@ -193,23 +193,23 @@ export default function StokBhpPage() {
         </div>
 
         {/* 3 KPI Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-[#FAF7F0] rounded-3xl border border-[#E8E1D3] p-5 space-y-1">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+          <div className="bg-[#FAF7F0] rounded-3xl border border-[#E8E1D3] p-4 sm:p-5 space-y-1">
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#52796F]">Total Jenis BHP</span>
-            <h3 className="text-2xl font-black font-mono text-[#1B4332]">{summary.total} Item</h3>
-            <p className="text-[11px] text-[#52796F]">Terdaftar di gudang logistik klinik</p>
+            <h3 className="text-xl sm:text-2xl font-black font-mono text-[#1B4332]">{summary.total} Item</h3>
+            <p className="text-[10px] sm:text-[11px] text-[#52796F]">Terdaftar di gudang klinik</p>
           </div>
 
-          <div className="bg-[#FAF7F0] rounded-3xl border border-[#E63946]/30 p-5 space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#E63946]">Stok Menipis / Kritis</span>
-            <h3 className="text-2xl font-black font-mono text-[#E63946]">{summary.lowStock} Item</h3>
-            <p className="text-[11px] text-[#52796F]">Muncul otomatis di lonceng notifikasi</p>
+          <div className="bg-[#FAF7F0] rounded-3xl border border-[#E63946]/30 p-4 sm:p-5 space-y-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#E63946]">Stok Menipis</span>
+            <h3 className="text-xl sm:text-2xl font-black font-mono text-[#E63946]">{summary.lowStock} Item</h3>
+            <p className="text-[10px] sm:text-[11px] text-[#52796F]">Muncul di notifikasi</p>
           </div>
 
-          <div className="bg-[#1B4332] text-[#FAF7F0] rounded-3xl border border-[#2D6A4F] p-5 space-y-1">
+          <div className="col-span-2 sm:col-span-1 bg-[#1B4332] text-[#FAF7F0] rounded-3xl border border-[#2D6A4F] p-4 sm:p-5 space-y-1">
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#95D5B2]">Estimasi Nilai Aset BHP</span>
-            <h3 className="text-2xl font-black font-mono">Rp {summary.totalAsset.toLocaleString('id-ID')}</h3>
-            <p className="text-[11px] text-[#B7D3C4]">Total nilai persediaan aktif saat ini</p>
+            <h3 className="text-xl sm:text-2xl font-black font-mono">Rp {summary.totalAsset.toLocaleString('id-ID')}</h3>
+            <p className="text-[10px] sm:text-[11px] text-[#B7D3C4]">Total nilai persediaan aktif saat ini</p>
           </div>
         </div>
 
@@ -241,7 +241,63 @@ export default function StokBhpPage() {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* TAMPILAN KARTU MOBILE (< md) */}
+          <div className="md:hidden divide-y divide-slate-100">
+            {isLoading ? (
+              <div className="p-8 text-center text-xs text-slate-400">Memuat inventaris BHP...</div>
+            ) : filteredItems.length === 0 ? (
+              <div className="p-8 text-center text-xs text-slate-400">Tidak ada item BHP yang cocok.</div>
+            ) : (
+              filteredItems.map((item) => {
+                const isLow = item.stockQty <= item.minStock;
+                return (
+                  <div key={item.id} className="p-4 space-y-3 text-xs">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <span className="font-mono text-[10px] font-bold text-[#52796F]">{item.code} • {item.category}</span>
+                        <h3 className="font-bold text-[#1B4332] text-sm leading-snug">{item.name}</h3>
+                      </div>
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
+                        isLow ? 'bg-[#E63946] text-white' : 'bg-emerald-100 text-emerald-700'
+                      }`}>
+                        {isLow ? 'MENIPIS' : 'AMAN'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[11px] bg-[#FAF7F0] px-3 py-2 rounded-xl border border-[#E8E1D3]">
+                      <span>
+                        Stok: <strong className={`font-mono font-black ${isLow ? 'text-[#E63946]' : 'text-[#1B4332]'}`}>{item.stockQty} {item.unit}</strong>
+                        <span className="text-slate-400 ml-1">(Min {item.minStock})</span>
+                      </span>
+                      <strong className="font-mono text-[#1B4332]">Rp {item.unitPrice.toLocaleString('id-ID')}</strong>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => openMutationModal(item, 'IN')}
+                        className="min-h-[40px] px-3 py-2 rounded-xl bg-[#1B4332] text-[#FAF7F0] font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <AppIcon name="plus" className="w-3 h-3" />
+                        <span>Restock</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openMutationModal(item, 'OUT')}
+                        className="min-h-[40px] px-3 py-2 rounded-xl bg-[#F5F1E8] border border-[#DED6C5] text-[#1B4332] font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <AppIcon name="minus" className="w-3 h-3" />
+                        <span>Pakai</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* TAMPILAN TABEL DESKTOP (>= md) */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">

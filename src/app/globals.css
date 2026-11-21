@@ -56,33 +56,51 @@ html.dark body {
   background-color: #091913;
   color: #EAF3EE;
 }
-html.dark .bg-\[\#F5F1E8\] {
-  background-color: #091913 !important;
+html.dark .bg-\[\#F5F1E8\],
+html.dark .bg-slate-50\/60,
+html.dark .bg-slate-50\/70,
+html.dark .bg-slate-50\/80,
+html.dark .bg-slate-50\/90 {
+  background-color: #0D221A !important;
 }
 html.dark .bg-\[\#FAF7F0\],
 html.dark .bg-\[\#FAF7F0\]\/90,
 html.dark .bg-white,
 html.dark .bg-white\/95,
-html.dark .bg-white\/90 {
+html.dark .bg-white\/90,
+html.dark .bg-white\/80 {
   background-color: #112A20 !important;
   color: #EAF3EE !important;
 }
 html.dark .bg-slate-50,
-html.dark .bg-slate-50\/60,
-html.dark .bg-slate-50\/70,
-html.dark .bg-slate-50\/80,
-html.dark .bg-slate-100 {
+html.dark .bg-slate-100,
+html.dark .bg-\[\#E8E1D3\] {
   background-color: #16362A !important;
+}
+html.dark .bg-amber-50\/50,
+html.dark .bg-amber-50\/40,
+html.dark .bg-amber-50 {
+  background-color: #2A2312 !important;
+}
+html.dark .bg-emerald-50\/70,
+html.dark .bg-emerald-50 {
+  background-color: #103224 !important;
 }
 html.dark .border-\[\#E8E1D3\],
 html.dark .border-\[\#DED6C5\],
 html.dark .border-slate-200,
 html.dark .border-slate-200\/90,
 html.dark .border-slate-200\/80,
-html.dark .border-slate-100 {
+html.dark .border-slate-100,
+html.dark .border-slate-300 {
+  border-color: #244D3D !important;
+}
+html.dark .divide-slate-100 > :not(:last-child),
+html.dark .divide-\[\#E8E1D3\] > :not(:last-child) {
   border-color: #244D3D !important;
 }
 html.dark .text-\[\#1B4332\],
+html.dark .text-\[\#2D6A4F\],
 html.dark .text-slate-900,
 html.dark .text-slate-800,
 html.dark .text-slate-700 {
@@ -93,6 +111,24 @@ html.dark .text-slate-600,
 html.dark .text-slate-500,
 html.dark .text-slate-400 {
   color: #9BC2AF !important;
+}
+html.dark input:not([type='checkbox']):not([type='radio']),
+html.dark textarea,
+html.dark select {
+  background-color: #16362A !important;
+  color: #EAF3EE !important;
+  border-color: #2D6A4F !important;
+}
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #7FA894 !important;
+}
+html.dark table thead tr {
+  background-color: #16362A !important;
+  color: #CBE5D6 !important;
+}
+html.dark table tbody tr:hover {
+  background-color: #153528 !important;
 }
 
 /* Efek Hover Kursor Halus */
@@ -134,6 +170,48 @@ html.dark .text-slate-400 {
 
 .animate-float-slow {
   animation: floatSlow 6s ease-in-out infinite;
+}
+
+/* Semantic Surface & Accessibility Helpers */
+.yovela-card {
+  background-color: var(--oat-50);
+  border: 1px solid var(--oat-200);
+  border-radius: 1.5rem;
+  box-shadow: 0 1px 2px rgba(27, 67, 50, 0.05);
+}
+
+html.dark .yovela-card {
+  background-color: #112A20;
+  border-color: #244D3D;
+}
+
+@keyframes skeletonShimmer {
+  0% { opacity: 0.55; }
+  50% { opacity: 0.9; }
+  100% { opacity: 0.55; }
+}
+
+.skeleton-shimmer {
+  background-color: #E8E1D3;
+  animation: skeletonShimmer 1.4s ease-in-out infinite;
+}
+
+html.dark .skeleton-shimmer {
+  background-color: #1D4233;
+}
+
+:focus-visible {
+  outline: 2px solid var(--forest-700);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-gradient-flow,
+  .animate-float-slow,
+  .animate-marquee,
+  .skeleton-shimmer {
+    animation: none !important;
+  }
 }
 
 /* Animasi Teks Berjalan Display TV */

@@ -44,6 +44,15 @@ export async function PATCH(
       );
     }
 
+    if (body.statusKunjungan === 'Menunggu Pembayaran' && isMedicalUpdate) {
+      if (body.diagnosisIcd10 !== undefined && !String(body.diagnosisIcd10).trim()) {
+        return NextResponse.json({ error: 'Diagnosis ICD-10 wajib dipilih sebelum finalisasi ke kasir.' }, { status: 400 });
+      }
+      if (Array.isArray(body.suggestedTreatments) && body.suggestedTreatments.length === 0) {
+        return NextResponse.json({ error: 'Pilih minimal 1 tindakan prosedur sebelum mengirim ke kasir.' }, { status: 400 });
+      }
+    }
+
     if (body.subjective !== undefined) updateData.subjective = String(body.subjective);
     if (body.objective !== undefined) updateData.objective = String(body.objective);
     if (body.diagnosisIcd10 !== undefined) updateData.diagnosisIcd10 = String(body.diagnosisIcd10);
@@ -86,10 +95,16 @@ export async function PATCH(
         });
       }
 
+      const auditAction = isMedicalUpdate
+        ? body.statusKunjungan === 'Menunggu Pembayaran'
+          ? 'FINALIZE_EMR'
+          : 'SAVE_DRAFT_EMR'
+        : 'UPDATE_ENCOUNTER_STATUS';
+
       await tx.auditLog.create({
         data: {
           userId: user.id,
-          action: isMedicalUpdate ? 'SAVE_EMR' : 'UPDATE_ENCOUNTER_STATUS',
+          action: auditAction,
           entityType: 'Encounter',
           entityId: id,
           metadataJson: JSON.stringify({ statusKunjungan: enc.statusKunjungan }),

@@ -17,9 +17,14 @@ export const metadata = {
   description: 'Klinik Gigi Modern & Sistem Informasi Manajemen Rekam Medis Elektronik, Odontogram FDI, Jadwal & Kasir',
 };
 
+const themeInitScript = `(function(){try{var t=localStorage.getItem('yovela_theme');if(t==='dark'){document.documentElement.classList.add('dark');}}catch(e){}})();`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="id" className={poppins.variable} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body className="bg-[#F5F1E8] text-[#1B4332] font-sans antialiased m-0 p-0 transition-colors duration-200">
         <ThemeProvider>
           <ToastProvider>

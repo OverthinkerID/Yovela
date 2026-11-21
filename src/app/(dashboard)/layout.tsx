@@ -7,8 +7,9 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuth, UserRole, StaffAccount } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useToast } from '../../context/ToastContext';
+import { NotificationCenter } from '../../components/NotificationCenter';
 
-type MobileSheetType = 'pasien' | 'klinis' | 'kasir' | 'profil' | null;
+type MobileSheetType = 'lainnya' | 'profil' | null;
 type SettingsTabType = 'akun' | 'role' | 'whatsapp' | 'tentang';
 
 interface RegTokenItem {
@@ -21,13 +22,6 @@ interface RegTokenItem {
   isActive: boolean;
 }
 
-interface NotificationItem {
-  id: string;
-  title: string;
-  subtitle: string;
-  href: string;
-  type: 'info' | 'warning' | 'alert';
-}
 
 const DEFAULT_PERMS: Record<UserRole, string[]> = {
   DOKTER: ['dashboard', 'jadwal', 'pasien', 'antrean', 'display-antrean', 'poli', 'satusehat', 'stok', 'kasir', 'laporan', 'pengeluaran'],
@@ -63,9 +57,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [searchSidebarQuery, setSearchSidebarQuery] = useState('');
 
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-  const [isNotifOpen, setIsNotifOpen] = useState(false);
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
 
   const [mobileSheet, setMobileSheet] = useState<MobileSheetType>(null);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -86,7 +77,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [isTestingWa, setIsTestingWa] = useState(false);
 
   const profileMenuRef = useRef<HTMLDivElement>(null);
-  const notifMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!isTVDisplay && !isLoading && !currentUser && pathname !== '/login') {
@@ -107,25 +97,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
         setIsProfileMenuOpen(false);
       }
-      if (notifMenuRef.current && !notifMenuRef.current.contains(event.target as Node)) {
-        setIsNotifOpen(false);
+    }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setIsProfileMenuOpen(false);
+        setMobileSheet(null);
+        setShowSettingsModal(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
-
-  const fetchNotifications = useCallback(async () => {
-    if (!currentUser || isTVDisplay) return;
-    try {
-      const res = await fetch('/api/notifications', { cache: 'no-store' });
-      if (res.ok) {
-        const data = await res.json();
-        setNotifications(data.notifications || []);
-        setUnreadCount(data.unreadCount || 0);
-      }
-    } catch {}
-  }, [currentUser, isTVDisplay]);
 
   const fetchPermissions = useCallback(async () => {
     if (!currentUser || isTVDisplay) return;
@@ -139,11 +125,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [currentUser, isTVDisplay]);
 
   useEffect(() => {
-    fetchNotifications();
     fetchPermissions();
-    const timer = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(timer);
-  }, [fetchNotifications, fetchPermissions, pathname]);
+  }, [fetchPermissions, pathname]);
 
   const loadTokens = async () => {
     try {
@@ -228,40 +211,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     m.label.toLowerCase().includes(searchSidebarQuery.toLowerCase())
   );
 
-  const mobileCategories: {
-    id: 'pasien' | 'klinis' | 'kasir';
-    label: string;
-    subtitle: string;
-    icon: string;
-    items: typeof authorizedMenuList;
-  }[] = [
-    {
-      id: 'pasien',
-      label: 'Pasien',
-      subtitle: 'Jadwal, Pendaftaran & Antrean',
-      icon: 'users',
-      items: authorizedMenuList.filter((m) => m.category === 'pasien'),
-    },
-    {
-      id: 'klinis',
-      label: 'Klinis',
-      subtitle: 'Poli Gigi, Odontogram & SATUSEHAT',
-      icon: 'tooth',
-      items: authorizedMenuList.filter((m) => m.category === 'klinis'),
-    },
-    {
-      id: 'kasir',
-      label: 'Kasir',
-      subtitle: 'Billing, QRIS/EDC & Laporan',
-      icon: 'receipt',
-      items: authorizedMenuList.filter((m) => m.category === 'kasir'),
-    },
-  ];
+  const lainnyaItems = authorizedMenuList.filter(
+    (m) => !['dashboard', 'jadwal', 'pasien'].includes(m.permKey)
+  );
 
   const normalizedPath = pathname?.replace(/\/$/, '') || '/dashboard';
   const matchedMenu = menuList.find((m) => normalizedPath.startsWith(m.href));
   const isRouteAuthorized = !matchedMenu || myPerms.includes(matchedMenu.permKey);
-  const activeCategory = matchedMenu?.category || 'home';
+  const canAccessJadwal = myPerms.includes('jadwal');
+  const canAccessPasien = myPerms.includes('pasien');
+  const isHomeActive = normalizedPath === '/dashboard';
+  const isJadwalActive = normalizedPath.startsWith('/jadwal');
+  const isPasienActive = normalizedPath.startsWith('/pasien');
+  const isLainnyaRouteActive = !isHomeActive && !isJadwalActive && !isPasienActive;
 
   const handleFullLogout = () => {
     setIsProfileMenuOpen(false);
@@ -333,7 +295,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     setMobileSheet(null);
   };
 
-  const activeMobileCategoryObj = mobileCategories.find((c) => c.id === mobileSheet);
+  const hasLainnyaAccess = lainnyaItems.length > 0 || isDoctorAdmin;
 
   return (
     <div className="min-h-screen bg-[#F5F1E8] text-[#1B4332] flex antialiased relative w-full">
@@ -459,7 +421,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </aside>
 
       {/* KONTEN UTAMA & FLOATING GLASS HEADER */}
-      <div className="flex-1 flex flex-col min-w-0 w-full overflow-x-hidden pb-24 md:pb-0">
+      <div className="flex-1 flex flex-col min-w-0 w-full overflow-x-hidden pb-28 md:pb-0">
         <div className="px-3 pt-3 sticky top-0 z-30 print:hidden">
           <header className="bg-[#FAF7F0]/90 backdrop-blur-xl border border-[#DED6C5] rounded-2xl px-4 sm:px-5 py-2.5 shadow-xs flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 min-w-0">
@@ -482,79 +444,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <button
                 type="button"
                 onClick={handleToggleTheme}
+                aria-label={theme === 'dark' ? 'Beralih ke Light Mode' : 'Beralih ke Dark Mode'}
                 title={theme === 'dark' ? 'Beralih ke Light Mode' : 'Beralih ke Dark Mode'}
                 className="w-9 h-9 rounded-full bg-white hover:bg-[#F5F1E8] border border-[#DED6C5] text-[#1B4332] flex items-center justify-center transition cursor-pointer shadow-2xs"
               >
                 <AppIcon name={theme === 'dark' ? 'sun' : 'moon'} className="w-4 h-4" />
               </button>
 
-              {/* Lonceng Notifikasi + Badge */}
-              <div className="relative" ref={notifMenuRef}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsNotifOpen(!isNotifOpen);
-                    if (!isNotifOpen) fetchNotifications();
-                  }}
-                  title="Notifikasi Operasional Klinik"
-                  className="relative w-9 h-9 rounded-full bg-white hover:bg-[#F5F1E8] border border-[#DED6C5] text-[#1B4332] flex items-center justify-center transition cursor-pointer shadow-2xs"
-                >
-                  <AppIcon name="bell" className="w-4 h-4" />
-                  {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[#E63946] text-white text-[10px] font-black font-mono flex items-center justify-center shadow-sm border-2 border-[#FAF7F0]">
-                      {unreadCount}
-                    </span>
-                  )}
-                </button>
-
-                {isNotifOpen && (
-                  <div className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] bg-[#FAF7F0] border border-[#DED6C5] rounded-2xl shadow-2xl py-2.5 z-50 animate-in fade-in zoom-in-95 duration-100">
-                    <div className="px-4 pb-2 border-b border-[#E8E1D3] flex items-center justify-between">
-                      <span className="text-xs font-extrabold text-[#1B4332]">Notifikasi Klinik</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          fetchNotifications();
-                          showToast('Notifikasi diperbarui.', 'info');
-                        }}
-                        className="text-[10px] font-bold text-[#2D6A4F] hover:text-[#E63946] cursor-pointer"
-                      >
-                        Segarkan
-                      </button>
-                    </div>
-                    <div className="max-h-72 overflow-y-auto divide-y divide-[#E8E1D3]">
-                      {notifications.length === 0 ? (
-                        <div className="px-4 py-6 text-center text-xs text-[#52796F]">
-                          Semua antrean &amp; tagihan terkendali. Tidak ada notifikasi tertunda.
-                        </div>
-                      ) : (
-                        notifications.map((n) => (
-                          <Link
-                            key={n.id}
-                            href={n.href}
-                            onClick={() => setIsNotifOpen(false)}
-                            className="flex items-start gap-3 px-4 py-3 hover:bg-[#F5F1E8] transition"
-                          >
-                            <span
-                              className={`mt-0.5 w-2.5 h-2.5 rounded-full shrink-0 ${
-                                n.type === 'alert'
-                                  ? 'bg-[#E63946]'
-                                  : n.type === 'warning'
-                                  ? 'bg-amber-500'
-                                  : 'bg-[#2D6A4F]'
-                              }`}
-                            />
-                            <div className="min-w-0">
-                              <p className="text-xs font-bold text-[#1B4332] leading-snug">{n.title}</p>
-                              <p className="text-[10px] text-[#52796F] mt-0.5 leading-relaxed">{n.subtitle}</p>
-                            </div>
-                          </Link>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
+              {/* Pusat Notifikasi Terintegrasi */}
+              <NotificationCenter activePath={pathname || ''} />
 
               {/* Profil Desktop */}
               <div className="relative hidden md:block" ref={profileMenuRef}>
@@ -607,6 +505,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       <AppIcon name="award" className="text-[#2D6A4F] text-xs w-4" />
                       <span>Tentang Aplikasi</span>
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleToggleTheme();
+                        setIsProfileMenuOpen(false);
+                      }}
+                      className="w-full px-4 py-2 text-left text-xs text-[#1B4332] hover:bg-[#F5F1E8] flex items-center justify-between gap-2.5 transition cursor-pointer font-semibold"
+                    >
+                      <span className="flex items-center gap-2.5">
+                        <AppIcon name={theme === 'dark' ? 'sun' : 'moon'} className="text-[#2D6A4F] text-xs w-4" />
+                        <span>Tema ({theme === 'dark' ? 'Dark' : 'Light'})</span>
+                      </span>
+                      <span className="text-[10px] text-[#52796F]">Ubah</span>
+                    </button>
                     <div className="my-1 border-t border-[#E8E1D3]" />
                     <button
                       type="button"
@@ -655,14 +567,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </footer>
       </div>
 
-      {/* MOBILE iPHONE-STYLE BOTTOM SHEET */}
+      {/* MOBILE iPHONE-STYLE BOTTOM SHEET (LAINNYA & PROFIL) */}
       {mobileSheet && (
         <div
           className="fixed inset-0 z-40 bg-[#0E261C]/50 backdrop-blur-xs md:hidden print:hidden flex items-end"
           onClick={() => setMobileSheet(null)}
         >
           <div
-            className="w-full bg-[#FAF7F0] rounded-t-3xl p-5 pb-28 shadow-2xl border-t border-[#DED6C5] space-y-4 animate-in slide-in-from-bottom-6 duration-200"
+            className="w-full bg-[#FAF7F0] rounded-t-3xl p-5 pb-28 shadow-2xl border-t border-[#DED6C5] space-y-4 max-h-[82vh] overflow-y-auto animate-in slide-in-from-bottom-6 duration-200"
+            style={{ paddingBottom: 'calc(6.5rem + env(safe-area-inset-bottom))' }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="w-10 h-1 bg-[#DED6C5] rounded-full mx-auto" />
@@ -681,6 +594,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     </p>
                   </div>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={handleToggleTheme}
+                  className="w-full p-3.5 rounded-2xl bg-white hover:bg-[#F5F1E8] border border-[#DED6C5] flex items-center justify-between text-xs font-bold text-[#1B4332] cursor-pointer"
+                >
+                  <span className="flex items-center gap-3">
+                    <AppIcon name={theme === 'dark' ? 'sun' : 'moon'} className="w-4 h-4 text-[#2D6A4F]" />
+                    <span>Tema Tampilan ({theme === 'dark' ? 'Dark Forest Mode' : 'Light Oat Mode'})</span>
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-[#F5F1E8] border border-[#DED6C5] text-[10px]">
+                    Ubah
+                  </span>
+                </button>
 
                 {isDoctorAdmin && (
                   <>
@@ -730,12 +657,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <span>Keluar dari Sesi (Logout)</span>
                 </button>
               </div>
-            ) : activeMobileCategoryObj ? (
+            ) : (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-sm font-extrabold text-[#1B4332]">Kategori {activeMobileCategoryObj.label}</h3>
-                    <p className="text-[11px] text-[#52796F]">{activeMobileCategoryObj.subtitle}</p>
+                    <h3 className="text-sm font-extrabold text-[#1B4332]">Menu Lainnya</h3>
+                    <p className="text-[11px] text-[#52796F]">Akses modul sesuai wewenang peran {currentUser.role}</p>
                   </div>
                   <button
                     type="button"
@@ -746,51 +673,61 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   </button>
                 </div>
 
-                {activeMobileCategoryObj.items.length === 0 ? (
-                  <div className="p-4 rounded-2xl bg-[#F5F1E8] border border-[#E8E1D3] text-center text-xs text-[#52796F]">
-                    Menu kategori ini tidak tersedia untuk peran <strong>{currentUser.role}</strong>.
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 gap-2">
-                    {activeMobileCategoryObj.items.map((item) => {
-                      const isActive = pathname === item.href;
-                      return (
-                        <Link
-                          key={item.href}
-                          href={item.href}
-                          target={item.isExternal ? '_blank' : '_self'}
-                          rel={item.isExternal ? 'noopener noreferrer' : undefined}
-                          onClick={() => setMobileSheet(null)}
-                          className={`p-3.5 rounded-2xl border flex items-center justify-between transition ${
-                            isActive
-                              ? 'bg-[#1B4332] border-[#1B4332] text-[#FAF7F0] font-bold'
-                              : 'bg-white border-[#DED6C5] text-[#1B4332] hover:bg-[#F5F1E8] font-semibold'
-                          }`}
-                        >
-                          <span className="flex items-center gap-3 text-xs">
-                            <span className={`w-8 h-8 rounded-xl flex items-center justify-center ${
-                              isActive ? 'bg-[#E63946] text-white' : 'bg-[#F5F1E8] text-[#1B4332]'
-                            }`}>
-                              <AppIcon name={item.icon} className="w-4 h-4" />
-                            </span>
-                            <span>{item.label}</span>
+                <div className="grid grid-cols-1 gap-2">
+                  {lainnyaItems.map((item) => {
+                    const isActive = pathname === item.href;
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        target={item.isExternal ? '_blank' : '_self'}
+                        rel={item.isExternal ? 'noopener noreferrer' : undefined}
+                        onClick={() => setMobileSheet(null)}
+                        className={`p-3.5 rounded-2xl border flex items-center justify-between transition ${
+                          isActive
+                            ? 'bg-[#1B4332] border-[#1B4332] text-[#FAF7F0] font-bold'
+                            : 'bg-white border-[#DED6C5] text-[#1B4332] hover:bg-[#F5F1E8] font-semibold'
+                        }`}
+                      >
+                        <span className="flex items-center gap-3 text-xs">
+                          <span className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                            isActive ? 'bg-[#E63946] text-white' : 'bg-[#F5F1E8] text-[#1B4332]'
+                          }`}>
+                            <AppIcon name={item.icon} className="w-4 h-4" />
                           </span>
-                          <AppIcon
-                            name={item.isExternal ? 'arrow-up-right-from-square' : 'arrow-right'}
-                            className="w-3.5 h-3.5 opacity-60"
-                          />
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
+                          <span>{item.label}</span>
+                        </span>
+                        <AppIcon
+                          name={item.isExternal ? 'arrow-up-right-from-square' : 'arrow-right'}
+                          className="w-3.5 h-3.5 opacity-60"
+                        />
+                      </Link>
+                    );
+                  })}
+
+                  {isDoctorAdmin && (
+                    <button
+                      type="button"
+                      onClick={() => openSettings('akun')}
+                      className="p-3.5 rounded-2xl border bg-white border-[#DED6C5] text-[#1B4332] hover:bg-[#F5F1E8] font-semibold flex items-center justify-between transition cursor-pointer"
+                    >
+                      <span className="flex items-center gap-3 text-xs">
+                        <span className="w-8 h-8 rounded-xl bg-[#F5F1E8] text-[#1B4332] flex items-center justify-center">
+                          <AppIcon name="users-gear" className="w-4 h-4" />
+                        </span>
+                        <span>Pengaturan Klinik &amp; RBAC</span>
+                      </span>
+                      <AppIcon name="arrow-right" className="w-3.5 h-3.5 opacity-60" />
+                    </button>
+                  )}
+                </div>
               </div>
-            ) : null}
+            )}
           </div>
         </div>
       )}
 
-      {/* MOBILE iPHONE-STYLE FLOATING BOTTOM BAR */}
+      {/* MOBILE iPHONE-STYLE FLOATING BOTTOM NAVIGATION (5 SLOT: HOME | JADWAL | PASIEN | LAINNYA | PROFIL) */}
       <nav
         aria-label="Navigasi Mobile"
         className="md:hidden print:hidden fixed bottom-3 left-3 right-3 z-50 bg-[#1B4332]/95 backdrop-blur-xl border border-[#2D6A4F] rounded-[28px] shadow-2xl px-2 py-1.5"
@@ -800,8 +737,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <Link
             href="/dashboard"
             onClick={() => setMobileSheet(null)}
-            className={`flex flex-col items-center justify-center py-1.5 rounded-2xl transition ${
-              activeCategory === 'home' && !mobileSheet
+            className={`min-h-[46px] flex flex-col items-center justify-center py-1.5 rounded-2xl transition ${
+              isHomeActive && !mobileSheet
                 ? 'bg-[#FAF7F0] text-[#1B4332] font-extrabold shadow-sm'
                 : 'text-[#B7D3C4] hover:text-white'
             }`}
@@ -810,36 +747,66 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <span className="text-[10px] mt-0.5 leading-none">Home</span>
           </Link>
 
-          {mobileCategories.map((cat) => {
-            const isOpen = mobileSheet === cat.id;
-            const isCurrentCat = activeCategory === cat.id && !mobileSheet;
-            const isDisabled = cat.items.length === 0;
-            const isActive = isOpen || isCurrentCat;
+          {canAccessJadwal ? (
+            <Link
+              href="/jadwal"
+              onClick={() => setMobileSheet(null)}
+              className={`min-h-[46px] flex flex-col items-center justify-center py-1.5 rounded-2xl transition ${
+                isJadwalActive && !mobileSheet
+                  ? 'bg-[#FAF7F0] text-[#1B4332] font-extrabold shadow-sm'
+                  : 'text-[#B7D3C4] hover:text-white'
+              }`}
+            >
+              <AppIcon name="calendar-check" className="w-4 h-4" />
+              <span className="text-[10px] mt-0.5 leading-none">Jadwal</span>
+            </Link>
+          ) : (
+            <span className="min-h-[46px] flex flex-col items-center justify-center py-1.5 rounded-2xl text-[#52796F] opacity-40 cursor-not-allowed">
+              <AppIcon name="calendar-check" className="w-4 h-4" />
+              <span className="text-[10px] mt-0.5 leading-none">Jadwal</span>
+            </span>
+          )}
 
-            return (
-              <button
-                key={cat.id}
-                type="button"
-                disabled={isDisabled}
-                onClick={() => setMobileSheet(isOpen ? null : cat.id)}
-                className={`flex flex-col items-center justify-center py-1.5 rounded-2xl transition cursor-pointer ${
-                  isDisabled
-                    ? 'text-[#52796F] opacity-40 cursor-not-allowed'
-                    : isActive
-                    ? 'bg-[#E63946] text-white font-extrabold shadow-sm'
-                    : 'text-[#D8E8DF] hover:text-white'
-                }`}
-              >
-                <AppIcon name={cat.icon} className="w-4 h-4" />
-                <span className="text-[10px] mt-0.5 leading-none">{cat.label}</span>
-              </button>
-            );
-          })}
+          {canAccessPasien ? (
+            <Link
+              href="/pasien"
+              onClick={() => setMobileSheet(null)}
+              className={`min-h-[46px] flex flex-col items-center justify-center py-1.5 rounded-2xl transition ${
+                isPasienActive && !mobileSheet
+                  ? 'bg-[#FAF7F0] text-[#1B4332] font-extrabold shadow-sm'
+                  : 'text-[#B7D3C4] hover:text-white'
+              }`}
+            >
+              <AppIcon name="users" className="w-4 h-4" />
+              <span className="text-[10px] mt-0.5 leading-none">Pasien</span>
+            </Link>
+          ) : (
+            <span className="min-h-[46px] flex flex-col items-center justify-center py-1.5 rounded-2xl text-[#52796F] opacity-40 cursor-not-allowed">
+              <AppIcon name="users" className="w-4 h-4" />
+              <span className="text-[10px] mt-0.5 leading-none">Pasien</span>
+            </span>
+          )}
+
+          <button
+            type="button"
+            disabled={!hasLainnyaAccess}
+            onClick={() => setMobileSheet(mobileSheet === 'lainnya' ? null : 'lainnya')}
+            className={`min-h-[46px] flex flex-col items-center justify-center py-1.5 rounded-2xl transition cursor-pointer ${
+              !hasLainnyaAccess
+                ? 'text-[#52796F] opacity-40 cursor-not-allowed'
+                : mobileSheet === 'lainnya' || (isLainnyaRouteActive && !mobileSheet)
+                ? 'bg-[#E63946] text-white font-extrabold shadow-sm'
+                : 'text-[#D8E8DF] hover:text-white'
+            }`}
+          >
+            <AppIcon name="grid" className="w-4 h-4" />
+            <span className="text-[10px] mt-0.5 leading-none">Lainnya</span>
+          </button>
 
           <button
             type="button"
             onClick={() => setMobileSheet(mobileSheet === 'profil' ? null : 'profil')}
-            className={`flex flex-col items-center justify-center py-1.5 rounded-2xl transition cursor-pointer ${
+            className={`min-h-[46px] flex flex-col items-center justify-center py-1.5 rounded-2xl transition cursor-pointer ${
               mobileSheet === 'profil'
                 ? 'bg-[#FAF7F0] text-[#1B4332] font-extrabold shadow-sm'
                 : 'text-[#B7D3C4] hover:text-white'
@@ -853,7 +820,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* MODAL PENGATURAN: AKUN & TOKEN, ROLE & WEWENANG, TENTANG OVERTHINKER STUDIO */}
       {showSettingsModal && (
-        <div className="fixed inset-0 z-50 bg-[#0E261C]/60 backdrop-blur-xs flex items-center justify-center p-4 print:hidden">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Pengaturan Sistem dan Aplikasi"
+          className="fixed inset-0 z-50 bg-[#0E261C]/60 backdrop-blur-xs flex items-center justify-center p-4 print:hidden"
+        >
           <div className="bg-[#FAF7F0] rounded-3xl max-w-3xl w-full p-6 shadow-2xl border border-[#DED6C5] space-y-5 max-h-[90vh] overflow-y-auto text-xs">
             <div className="flex justify-between items-center border-b border-[#E8E1D3] pb-3">
               <div>
