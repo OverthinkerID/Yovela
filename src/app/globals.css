@@ -15,6 +15,34 @@
   --oat-300: #DED6C5;
   --tomato-500: #E63946;
   --tomato-600: #D62828;
+
+  /* Editorial Landing Page Design System */
+  --yovela-forest: #234B38;
+  --yovela-forest-deep: #163224;
+  --yovela-forest-muted: #4A6B5B;
+  --yovela-oat: #F3EBDD;
+  --yovela-oat-light: #FAF6EE;
+  --yovela-oat-border: #DFD4C0;
+  --yovela-tomato: #E65B45;
+  --yovela-tomato-dark: #CC4631;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+.font-editorial {
+  font-family: 'Playfair Display', 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+}
+
+.font-landing {
+  font-family: 'Manrope', var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
 }
 
 body {

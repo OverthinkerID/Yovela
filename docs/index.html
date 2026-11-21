@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" class="scroll-smooth">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -10,14 +10,16 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body { font-family: 'Poppins', sans-serif; background-color: #F5F1E8; color: #1B4332; }
+    .hover-lift { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .hover-lift:hover { transform: translateY(-3px); box-shadow: 0 12px 24px -10px rgba(27, 67, 50, 0.18); }
   </style>
 </head>
 <body class="min-h-screen flex flex-col antialiased">
-  <!-- Floating Navbar -->
+  <!-- FLOATING GLASS NAVBAR -->
   <header class="sticky top-3 z-40 px-4">
     <div class="max-w-7xl mx-auto bg-[#FAF7F0]/90 backdrop-blur-xl border border-[#DED6C5] rounded-2xl px-5 py-3 shadow-sm flex items-center justify-between gap-4">
       <a href="#" class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-xl bg-[#1B4332] flex items-center justify-center">
+        <div class="w-9 h-9 rounded-xl bg-[#1B4332] flex items-center justify-center shadow-xs">
           <svg viewBox="0 0 512 512" class="w-5 h-5 fill-[#FAF7F0]">
             <path d="M416 112c-35.3 0-64 28.7-64 64v51.2c0 23.4-12.2 44.9-32.3 56.8L272 312.6l-47.7-28.6c-20.1-12-32.3-33.5-32.3-56.8V176c0-35.3-28.7-64-64-64S64 140.7 64 176c0 86.8 52.3 162.7 128 193.3V432c0 17.7 14.3 32 32 32h64c17.7 0 32-14.3 32-32V369.3c75.7-30.6 128-106.5 128-193.3c0-35.3-28.7-64-64-64z" />
           </svg>
@@ -27,6 +29,7 @@
           <span class="text-[10px] text-[#52796F] font-semibold">Perawatan Gigi Modern &amp; Terpercaya</span>
         </div>
       </a>
+
       <nav class="hidden md:flex items-center gap-6 text-xs font-bold text-[#2D6A4F]">
         <a href="#profil" class="hover:text-[#E63946] transition">Profil Klinik</a>
         <a href="#dokter" class="hover:text-[#E63946] transition">Dokter</a>
@@ -34,121 +37,484 @@
         <a href="#testimoni" class="hover:text-[#E63946] transition">Testimoni</a>
         <a href="#booking" class="hover:text-[#E63946] transition">Booking Online</a>
       </nav>
-      <a href="#booking" class="px-4 py-2 rounded-xl bg-[#E63946] hover:bg-[#D62828] text-white text-xs font-bold shadow-sm transition">
-        Buat Janji
-      </a>
+
+      <div class="flex items-center gap-2">
+        <a
+          href="https://www.google.com/maps/search/?api=1&query=Yovela+Dental+Clinic+Semarang"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[#1B4332]/25 bg-white hover:bg-[#1B4332] hover:text-[#FAF7F0] text-[#1B4332] text-xs font-bold transition"
+        >
+          <span>Google Reviews</span>
+          <svg viewBox="0 0 24 24" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        </a>
+        <a href="#booking" class="px-4 py-2 rounded-xl bg-[#E63946] hover:bg-[#D62828] text-white text-xs font-bold shadow-sm shadow-[#E63946]/25 transition">
+          Buat Janji
+        </a>
+      </div>
     </div>
   </header>
 
-  <!-- Hero -->
+  <!-- HERO SECTION -->
   <section class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-12 pb-16">
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
       <div class="lg:col-span-7 space-y-6">
         <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1B4332]/10 border border-[#1B4332]/20 text-[#1B4332] text-xs font-bold">
-          <span class="w-2 h-2 rounded-full bg-[#E63946]"></span>
+          <span class="w-2 h-2 rounded-full bg-[#E63946] animate-pulse"></span>
           <span>Rekam Medis Digital FDI &amp; Integrasi SATUSEHAT Kemenkes RI</span>
         </div>
-        <h1 class="text-3xl sm:text-5xl font-black text-[#1B4332] leading-tight">
+
+        <h1 class="text-3xl sm:text-5xl font-black text-[#1B4332] leading-[1.15] tracking-tight">
           Senyum Sehat &amp; Nyaman Bersama <span class="text-[#E63946]">Yovela Dental Clinic</span>
         </h1>
+
         <p class="text-sm sm:text-base text-[#3A5A40] leading-relaxed max-w-2xl">
-          Klinik gigi modern di Semarang bersama <strong>drg. Yuli Kartilla Panjaitan</strong> dengan sterilisasi berstandar medis, odontogram digital transparan, serta booking jadwal cepat tanpa antre lama.
+          Klinik gigi modern di Semarang yang menggabungkan keahlian klinis
+          <strong>drg. Yuli Kartilla Panjaitan</strong>, sterilisasi berstandar medis, pemetaan
+          odontogram digital transparan, serta kemudahan booking online tanpa antre lama.
         </p>
-        <div class="flex flex-wrap gap-3">
-          <a href="#booking" class="px-6 py-3.5 rounded-2xl bg-[#E63946] hover:bg-[#D62828] text-white font-bold text-xs sm:text-sm shadow-lg transition">Booking Jadwal Sekarang</a>
-          <a href="#layanan" class="px-6 py-3.5 rounded-2xl bg-[#1B4332] hover:bg-[#2D6A4F] text-[#FAF7F0] font-bold text-xs sm:text-sm transition">Lihat Daftar Layanan</a>
+
+        <div class="flex flex-wrap items-center gap-3 pt-1">
+          <a href="#booking" class="px-6 py-3.5 rounded-2xl bg-[#E63946] hover:bg-[#D62828] text-white font-bold text-xs sm:text-sm shadow-lg shadow-[#E63946]/25 transition inline-flex items-center gap-2">
+            <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="m9 16 2 2 4-4"/></svg>
+            <span>Booking Jadwal Sekarang</span>
+          </a>
+          <a href="#layanan" class="px-6 py-3.5 rounded-2xl bg-[#1B4332] hover:bg-[#2D6A4F] text-[#FAF7F0] font-bold text-xs sm:text-sm transition inline-flex items-center gap-2">
+            <span>Lihat Daftar Layanan</span>
+          </a>
+        </div>
+
+        <div class="grid grid-cols-3 gap-4 pt-4 max-w-lg border-t border-[#DED6C5]">
+          <div>
+            <p class="text-2xl font-black font-mono text-[#1B4332]">5.0/5</p>
+            <p class="text-[11px] text-[#52796F] font-semibold">Rating Pasien</p>
+          </div>
+          <div>
+            <p class="text-2xl font-black font-mono text-[#1B4332]">30+</p>
+            <p class="text-[11px] text-[#52796F] font-semibold">Prosedur Gigi</p>
+          </div>
+          <div>
+            <p class="text-2xl font-black font-mono text-[#E63946]">0 Antre</p>
+            <p class="text-[11px] text-[#52796F] font-semibold">Booking Terjadwal</p>
+          </div>
         </div>
       </div>
+
+      <!-- KARTU JAM OPERASIONAL (FOREST GREEN) -->
       <div class="lg:col-span-5">
-        <div class="bg-[#1B4332] text-[#FAF7F0] rounded-[32px] p-7 shadow-2xl border border-[#2D6A4F] space-y-4">
+        <div class="bg-[#1B4332] text-[#FAF7F0] rounded-[32px] p-7 shadow-2xl shadow-[#1B4332]/25 border border-[#2D6A4F] space-y-5 relative overflow-hidden">
           <div class="flex items-center justify-between">
-            <span class="px-3 py-1 rounded-full bg-[#FAF7F0]/10 text-[10px] font-bold uppercase">Jam Operasional</span>
-            <span class="text-[11px] font-bold text-[#95D5B2]">Buka Hari Ini</span>
+            <span class="px-3 py-1 rounded-full bg-[#FAF7F0]/10 border border-[#FAF7F0]/20 text-[10px] font-bold uppercase tracking-wider">Jam Operasional Klinik</span>
+            <span class="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#95D5B2]">
+              <span class="w-2 h-2 rounded-full bg-[#95D5B2] animate-ping"></span>
+              Buka Hari Ini
+            </span>
           </div>
-          <div class="space-y-2 text-xs">
-            <div class="flex justify-between py-2 border-b border-white/10"><span class="text-[#B7D3C4]">Senin – Jumat</span><strong class="font-mono">09:00 – 20:00 WIB</strong></div>
-            <div class="flex justify-between py-2 border-b border-white/10"><span class="text-[#B7D3C4]">Sabtu</span><strong class="font-mono">09:00 – 17:00 WIB</strong></div>
-            <div class="flex justify-between py-2 border-b border-white/10"><span class="text-[#B7D3C4]">Alamat</span><strong>Jl. Pemuda No. 45, Semarang</strong></div>
-            <div class="flex justify-between py-2"><span class="text-[#B7D3C4]">Dokter PJ</span><strong>drg. Yuli Kartilla Panjaitan</strong></div>
+
+          <div class="space-y-2.5 text-xs">
+            <div class="flex justify-between py-2 border-b border-white/10">
+              <span class="text-[#B7D3C4]">Senin – Jumat</span>
+              <strong class="font-mono">09:00 – 20:00 WIB</strong>
+            </div>
+            <div class="flex justify-between py-2 border-b border-white/10">
+              <span class="text-[#B7D3C4]">Sabtu</span>
+              <strong class="font-mono">09:00 – 17:00 WIB</strong>
+            </div>
+            <div class="flex justify-between py-2 border-b border-white/10">
+              <span class="text-[#B7D3C4]">Lokasi Klinik</span>
+              <strong class="text-right">Jl. Pemuda No. 45, Semarang</strong>
+            </div>
+            <div class="flex justify-between py-2">
+              <span class="text-[#B7D3C4]">Pembayaran</span>
+              <strong>QRIS, EDC Debit, Tunai &amp; Cicilan</strong>
+            </div>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-[#0E261C] border border-[#2D6A4F] flex items-center gap-3.5">
+            <div class="w-11 h-11 rounded-2xl bg-[#E63946] text-white flex items-center justify-center shrink-0">
+              <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/><circle cx="20" cy="10" r="2"/></svg>
+            </div>
+            <div>
+              <p class="text-xs font-extrabold text-[#FAF7F0]">drg. Yuli Kartilla Panjaitan</p>
+              <p class="text-[10px] text-[#95D5B2] font-mono">SIP.503/449/DRG/2026</p>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Layanan -->
-  <section id="layanan" class="bg-[#FAF7F0] border-y border-[#E8E1D3] py-16 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-7xl mx-auto space-y-8">
-      <div>
+  <!-- PROFIL KLINIK & KEUNGGULAN -->
+  <section id="profil" class="bg-[#FAF7F0] border-y border-[#E8E1D3] py-16 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto space-y-10">
+      <div class="max-w-2xl space-y-2">
+        <span class="text-[11px] font-extrabold uppercase tracking-widest text-[#E63946]">Tentang Yovela Dental</span>
+        <h2 class="text-2xl sm:text-3xl font-black text-[#1B4332]">Standar Klinik Gigi Modern yang Transparan</h2>
+        <p class="text-xs sm:text-sm text-[#3A5A40] leading-relaxed">
+          Setiap pasien mendapatkan penjelasan visual kondisi gigi melalui papan Odontogram Digital FDI,
+          estimasi biaya sebelum tindakan, serta rekam medis elektronik aman yang terjaga lintas kunjungan.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div class="p-6 rounded-3xl bg-[#F5F1E8] border border-[#E8E1D3] space-y-3 hover-lift">
+          <div class="w-11 h-11 rounded-2xl bg-[#1B4332] text-[#FAF7F0] flex items-center justify-center font-bold text-xs">FDI</div>
+          <h3 class="text-sm font-extrabold text-[#1B4332]">Odontogram Digital FDI</h3>
+          <p class="text-xs text-[#3A5A40] leading-relaxed">Visualisasi kondisi setiap gigi secara akurat dan tersimpan sebagai riwayat kunjungan.</p>
+        </div>
+
+        <div class="p-6 rounded-3xl bg-[#F5F1E8] border border-[#E8E1D3] space-y-3 hover-lift">
+          <div class="w-11 h-11 rounded-2xl bg-[#1B4332] text-[#FAF7F0] flex items-center justify-center">
+            <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <h3 class="text-sm font-extrabold text-[#1B4332]">Sterilisasi Medis Ketat</h3>
+          <p class="text-xs text-[#3A5A40] leading-relaxed">Instrumen disterilkan dengan standar autoclave dan protokol pencegahan infeksi modern.</p>
+        </div>
+
+        <div class="p-6 rounded-3xl bg-[#F5F1E8] border border-[#E8E1D3] space-y-3 hover-lift">
+          <div class="w-11 h-11 rounded-2xl bg-[#1B4332] text-[#FAF7F0] flex items-center justify-center">
+            <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          </div>
+          <h3 class="text-sm font-extrabold text-[#1B4332]">QRIS, EDC &amp; Cicilan DP</h3>
+          <p class="text-xs text-[#3A5A40] leading-relaxed">Transaksi cepat dengan QRIS dinamis, mesin EDC, serta skema cicilan ortodonti transparan.</p>
+        </div>
+
+        <div class="p-6 rounded-3xl bg-[#F5F1E8] border border-[#E8E1D3] space-y-3 hover-lift">
+          <div class="w-11 h-11 rounded-2xl bg-[#1B4332] text-[#FAF7F0] flex items-center justify-center">
+            <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9v.01"/><path d="M9 12v.01"/><path d="M9 15v.01"/><path d="M9 18v.01"/></svg>
+          </div>
+          <h3 class="text-sm font-extrabold text-[#1B4332]">Siap Bridging SATUSEHAT</h3>
+          <p class="text-xs text-[#3A5A40] leading-relaxed">Struktur rekam medis ICD-10 &amp; ICD-9-CM terstandarisasi Kemenkes Republik Indonesia.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROFIL DOKTER -->
+  <section id="dokter" class="max-w-7xl mx-auto w-full py-16 px-4 sm:px-6 lg:px-8">
+    <div class="bg-[#1B4332] text-[#FAF7F0] rounded-[32px] p-8 sm:p-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center shadow-xl">
+      <div class="lg:col-span-4 flex flex-col items-center text-center bg-[#0E261C] rounded-3xl p-6 border border-[#2D6A4F]">
+        <div class="w-24 h-24 rounded-3xl bg-[#2D6A4F] border-2 border-[#FAF7F0]/30 flex items-center justify-center text-[#FAF7F0] mb-4">
+          <svg viewBox="0 0 24 24" class="w-12 h-12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/><circle cx="20" cy="10" r="2"/></svg>
+        </div>
+        <h3 class="text-base font-extrabold">drg. Yuli Kartilla Panjaitan</h3>
+        <p class="text-xs text-[#95D5B2] font-semibold mt-0.5">Dokter Gigi Umum &amp; Penanggung Jawab</p>
+        <span class="mt-3 px-3 py-1 rounded-full bg-[#FAF7F0]/10 font-mono text-[10px] text-[#FAF7F0]">
+          SIP.503/449/DRG/2026
+        </span>
+      </div>
+
+      <div class="lg:col-span-8 space-y-4">
+        <span class="text-[11px] font-extrabold uppercase tracking-widest text-[#FF8A93]">Profil Dokter Kami</span>
+        <h2 class="text-2xl sm:text-3xl font-black leading-tight">
+          Pendekatan Klinis Lembut, Edukatif, dan Berorientasi Kenyamanan Pasien
+        </h2>
+        <p class="text-xs sm:text-sm text-[#D8E8DF] leading-relaxed">
+          Berpengalaman menangani perawatan konservasi estetik, perawatan saluran akar (endodontik),
+          perawatan periodontal, bedah mulut minor (odontektomi gigi bungsu), hingga perawatan ortodonti
+          untuk anak maupun dewasa dengan komunikasi yang hangat dan menyeluruh.
+        </p>
+        <div class="flex flex-wrap gap-2 pt-1 text-[11px] font-bold">
+          <span class="px-3 py-1.5 rounded-xl bg-[#2D6A4F] text-[#FAF7F0]">Konservasi &amp; Estetika</span>
+          <span class="px-3 py-1.5 rounded-xl bg-[#2D6A4F] text-[#FAF7F0]">Endodontik (PSA)</span>
+          <span class="px-3 py-1.5 rounded-xl bg-[#2D6A4F] text-[#FAF7F0]">Periodonsia</span>
+          <span class="px-3 py-1.5 rounded-xl bg-[#2D6A4F] text-[#FAF7F0]">Bedah Mulut Minor</span>
+          <span class="px-3 py-1.5 rounded-xl bg-[#2D6A4F] text-[#FAF7F0]">Ortodonti</span>
+          <span class="px-3 py-1.5 rounded-xl bg-[#2D6A4F] text-[#FAF7F0]">Pedodonsia</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PELAYANAN GIGI (6 LAYANAN LENGKAP) -->
+  <section id="layanan" class="max-w-7xl mx-auto w-full py-12 px-4 sm:px-6 lg:px-8 space-y-8">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div class="space-y-1.5">
         <span class="text-[11px] font-extrabold uppercase tracking-widest text-[#E63946]">Pelayanan Gigi</span>
-        <h2 class="text-2xl sm:text-3xl font-black text-[#1B4332] mt-1">Layanan Lengkap untuk Seluruh Keluarga</h2>
+        <h2 class="text-2xl sm:text-3xl font-black text-[#1B4332]">Layanan Lengkap untuk Seluruh Keluarga</h2>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-5 text-xs">
-        <div class="bg-[#F5F1E8] border border-[#E8E1D3] rounded-3xl p-6 space-y-2"><strong class="text-sm block">Pemeriksaan &amp; Odontogram FDI</strong><p class="text-[#3A5A40]">Pemetaan kondisi gigi digital, rontgen periapikal, dan konsultasi preventif. Mulai Rp 100.000.</p></div>
-        <div class="bg-[#F5F1E8] border border-[#E8E1D3] rounded-3xl p-6 space-y-2"><strong class="text-sm block">Scaling &amp; Periodonsia</strong><p class="text-[#3A5A40]">Pembersihan karang gigi ultrasonik supragingival &amp; subgingival. Mulai Rp 300.000.</p></div>
-        <div class="bg-[#F5F1E8] border border-[#E8E1D3] rounded-3xl p-6 space-y-2"><strong class="text-sm block">Konservasi, Veneer &amp; Ortodonti</strong><p class="text-[#3A5A40]">Tambal komposit estetik, perawatan saluran akar, bleaching, hingga behel dengan cicilan DP.</p></div>
+      <a href="#booking" class="text-xs font-bold text-[#E63946] hover:underline inline-flex items-center gap-1.5">
+        <span>Konsultasikan keluhan Anda →</span>
+      </a>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div class="bg-[#FAF7F0] border border-[#E8E1D3] rounded-3xl p-6 space-y-3 hover-lift">
+        <div class="flex items-center justify-between">
+          <span class="px-3 py-1 rounded-xl bg-[#1B4332]/10 text-[#1B4332] text-[10px] font-extrabold">Preventif</span>
+          <span class="px-3 py-1 rounded-full bg-[#1B4332] text-[#FAF7F0] font-mono text-[10px] font-bold">Mulai Rp 100.000</span>
+        </div>
+        <h3 class="text-sm font-extrabold text-[#1B4332]">Pemeriksaan &amp; Preventif</h3>
+        <p class="text-xs text-[#3A5A40] leading-relaxed">Konsultasi intraoral menyeluruh, pemetaan Odontogram Digital FDI, rontgen periapikal, dan aplikasi fluor.</p>
+      </div>
+
+      <div class="bg-[#FAF7F0] border border-[#E8E1D3] rounded-3xl p-6 space-y-3 hover-lift">
+        <div class="flex items-center justify-between">
+          <span class="px-3 py-1 rounded-xl bg-[#1B4332]/10 text-[#1B4332] text-[10px] font-extrabold">Periodonsia</span>
+          <span class="px-3 py-1 rounded-full bg-[#1B4332] text-[#FAF7F0] font-mono text-[10px] font-bold">Mulai Rp 300.000</span>
+        </div>
+        <h3 class="text-sm font-extrabold text-[#1B4332]">Scaling &amp; Perawatan Gusi</h3>
+        <p class="text-xs text-[#3A5A40] leading-relaxed">Pembersihan karang gigi ultrasonik supragingival &amp; subgingival yang lembut tanpa rasa ngilu berlebih.</p>
+      </div>
+
+      <div class="bg-[#FAF7F0] border border-[#E8E1D3] rounded-3xl p-6 space-y-3 hover-lift">
+        <div class="flex items-center justify-between">
+          <span class="px-3 py-1 rounded-xl bg-[#1B4332]/10 text-[#1B4332] text-[10px] font-extrabold">Konservasi</span>
+          <span class="px-3 py-1 rounded-full bg-[#1B4332] text-[#FAF7F0] font-mono text-[10px] font-bold">Mulai Rp 280.000</span>
+        </div>
+        <h3 class="text-sm font-extrabold text-[#1B4332]">Tambal Estetik &amp; Saluran Akar</h3>
+        <p class="text-xs text-[#3A5A40] leading-relaxed">Restorasi komposit sewarna gigi asli (nano-hybrid) serta perawatan saluran akar (PSA) terukur.</p>
+      </div>
+
+      <div class="bg-[#FAF7F0] border border-[#E8E1D3] rounded-3xl p-6 space-y-3 hover-lift">
+        <div class="flex items-center justify-between">
+          <span class="px-3 py-1 rounded-xl bg-[#1B4332]/10 text-[#1B4332] text-[10px] font-extrabold">Bedah Mulut</span>
+          <span class="px-3 py-1 rounded-full bg-[#1B4332] text-[#FAF7F0] font-mono text-[10px] font-bold">Mulai Rp 250.000</span>
+        </div>
+        <h3 class="text-sm font-extrabold text-[#1B4332]">Bedah Mulut &amp; Odontektomi</h3>
+        <p class="text-xs text-[#3A5A40] leading-relaxed">Pencabutan gigi tanpa komplikasi hingga operasi gigi bungsu impaksi dengan sterilisasi autoclave ketat.</p>
+      </div>
+
+      <div class="bg-[#FAF7F0] border border-[#E8E1D3] rounded-3xl p-6 space-y-3 hover-lift">
+        <div class="flex items-center justify-between">
+          <span class="px-3 py-1 rounded-xl bg-[#1B4332]/10 text-[#1B4332] text-[10px] font-extrabold">Estetika</span>
+          <span class="px-3 py-1 rounded-full bg-[#1B4332] text-[#FAF7F0] font-mono text-[10px] font-bold">Mulai Rp 1.800.000</span>
+        </div>
+        <h3 class="text-sm font-extrabold text-[#1B4332]">Estetika, Veneer &amp; Bleaching</h3>
+        <p class="text-xs text-[#3A5A40] leading-relaxed">Pemutihan gigi laser in-office, mahkota Zirconia premium, hingga Porcelain Veneer untuk senyum natural.</p>
+      </div>
+
+      <div class="bg-[#FAF7F0] border border-[#E8E1D3] rounded-3xl p-6 space-y-3 hover-lift">
+        <div class="flex items-center justify-between">
+          <span class="px-3 py-1 rounded-xl bg-[#1B4332]/10 text-[#1B4332] text-[10px] font-extrabold">Ortodonti</span>
+          <span class="px-3 py-1 rounded-full bg-[#E63946] text-white font-mono text-[10px] font-bold">Tersedia Cicilan DP</span>
+        </div>
+        <h3 class="text-sm font-extrabold text-[#1B4332]">Ortodonti (Behel &amp; Retainer)</h3>
+        <p class="text-xs text-[#3A5A40] leading-relaxed">Pemasangan behel metal maupun sapphire estetik dengan jadwal kontrol rutin dan skema pembayaran bertahap.</p>
       </div>
     </div>
   </section>
 
-  <!-- Booking Online (Static GitHub Pages -> WhatsApp Direct Fallback) -->
-  <section id="booking" class="max-w-3xl mx-auto w-full py-16 px-4">
-    <div class="bg-[#FAF7F0] border border-[#DED6C5] rounded-3xl p-8 shadow-md space-y-4">
-      <span class="text-[11px] font-extrabold uppercase tracking-widest text-[#E63946]">Booking Online</span>
-      <h2 class="text-2xl font-black text-[#1B4332]">Reservasi Jadwal Kunjungan</h2>
-      <form id="staticBookingForm" class="space-y-3 text-xs">
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <input id="bName" required placeholder="Nama Lengkap" class="p-3 rounded-xl border border-[#DED6C5] bg-white font-semibold" />
-          <input id="bPhone" required placeholder="Nomor WhatsApp" class="p-3 rounded-xl border border-[#DED6C5] bg-white font-mono" />
+  <!-- TESTIMONI PASIEN -->
+  <section id="testimoni" class="bg-[#FAF7F0] border-y border-[#E8E1D3] py-16 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto space-y-8">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div class="space-y-1.5">
+          <span class="text-[11px] font-extrabold uppercase tracking-widest text-[#E63946]">Ulasan Terverifikasi</span>
+          <h2 class="text-2xl sm:text-3xl font-black text-[#1B4332]">Testimoni Pasien Yovela Dental</h2>
+          <p class="text-xs text-[#52796F]">Rata-rata <strong>5.0/5.0</strong> dari ulasan pasien klinik &amp; Google Reviews</p>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <input id="bDate" type="date" required class="p-3 rounded-xl border border-[#DED6C5] bg-white font-semibold" />
-          <input id="bService" required value="Konsultasi & Pemeriksaan Gigi" class="p-3 rounded-xl border border-[#DED6C5] bg-white" />
+        <a
+          href="https://www.google.com/maps/search/?api=1&query=Yovela+Dental+Clinic+Semarang"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="px-4 py-2 rounded-xl border border-[#1B4332]/25 bg-white hover:bg-[#1B4332] hover:text-[#FAF7F0] text-[#1B4332] text-xs font-bold transition"
+        >
+          Lihat Google Reviews →
+        </a>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div class="bg-[#F5F1E8] border border-[#E8E1D3] rounded-3xl p-5 flex flex-col justify-between space-y-4">
+          <div class="space-y-2.5">
+            <div class="flex items-center justify-between">
+              <span class="font-mono text-xs font-black text-[#E63946]">★★★★★</span>
+              <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-[#1B4332] text-[#FAF7F0]">Google Review</span>
+            </div>
+            <p class="text-xs text-[#2D4739] leading-relaxed">“Dokter Yuli sangat telaten menjelaskan kondisi gigi lewat layar odontogram. Scaling tidak sakit dan klinik sangat bersih.”</p>
+          </div>
+          <div class="pt-3 border-t border-[#E8E1D3]">
+            <p class="text-xs font-extrabold text-[#1B4332]">Nadia Kusuma</p>
+            <p class="text-[10px] text-[#52796F]">Scaling &amp; Polishing Ultrasonik</p>
+          </div>
         </div>
-        <button type="submit" class="w-full py-3.5 rounded-2xl bg-[#E63946] hover:bg-[#D62828] text-white font-bold cursor-pointer">
-          Kirim Booking via WhatsApp Klinik
-        </button>
-      </form>
+
+        <div class="bg-[#F5F1E8] border border-[#E8E1D3] rounded-3xl p-5 flex flex-col justify-between space-y-4">
+          <div class="space-y-2.5">
+            <div class="flex items-center justify-between">
+              <span class="font-mono text-xs font-black text-[#E63946]">★★★★★</span>
+              <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-white border border-[#DED6C5] text-[#2D6A4F]">Pasien Aplikasi</span>
+            </div>
+            <p class="text-xs text-[#2D4739] leading-relaxed">“Booking online dari HP langsung dapat jadwal pasti tanpa menunggu lama. Hasil tambalan kompositnya menyatu sempurna.”</p>
+          </div>
+          <div class="pt-3 border-t border-[#E8E1D3]">
+            <p class="text-xs font-extrabold text-[#1B4332]">Dimas Pratama</p>
+            <p class="text-[10px] text-[#52796F]">Tambal Komposit Estetik</p>
+          </div>
+        </div>
+
+        <div class="bg-[#F5F1E8] border border-[#E8E1D3] rounded-3xl p-5 flex flex-col justify-between space-y-4">
+          <div class="space-y-2.5">
+            <div class="flex items-center justify-between">
+              <span class="font-mono text-xs font-black text-[#E63946]">★★★★★</span>
+              <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-[#1B4332] text-[#FAF7F0]">Google Review</span>
+            </div>
+            <p class="text-xs text-[#2D4739] leading-relaxed">“Pemasangan behel transparan dengan skema DP cicilan sangat membantu. Kontrol rutin selalu diingatkan via WhatsApp.”</p>
+          </div>
+          <div class="pt-3 border-t border-[#E8E1D3]">
+            <p class="text-xs font-extrabold text-[#1B4332]">Clarissa Wijaya</p>
+            <p class="text-[10px] text-[#52796F]">Ortodonti Sapphire Estetik</p>
+          </div>
+        </div>
+
+        <div class="bg-[#F5F1E8] border border-[#E8E1D3] rounded-3xl p-5 flex flex-col justify-between space-y-4">
+          <div class="space-y-2.5">
+            <div class="flex items-center justify-between">
+              <span class="font-mono text-xs font-black text-[#E63946]">★★★★★</span>
+              <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-white border border-[#DED6C5] text-[#2D6A4F]">Pasien Aplikasi</span>
+            </div>
+            <p class="text-xs text-[#2D4739] leading-relaxed">“Odontektomi gigi bungsu berjalan cepat, minim bengkak, dan edukasi pasca-tindakan sangat jelas.”</p>
+          </div>
+          <div class="pt-3 border-t border-[#E8E1D3]">
+            <p class="text-xs font-extrabold text-[#1B4332]">Budi Santoso</p>
+            <p class="text-[10px] text-[#52796F]">Bedah Mulut Minor</p>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 
-  <!-- ElectronJS-Style Architectural Footer -->
+  <!-- BOOKING ONLINE -->
+  <section id="booking" class="max-w-7xl mx-auto w-full py-16 px-4 sm:px-6 lg:px-8">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <div class="lg:col-span-5 space-y-4">
+        <span class="text-[11px] font-extrabold uppercase tracking-widest text-[#E63946]">Booking Online</span>
+        <h2 class="text-2xl sm:text-3xl font-black text-[#1B4332] leading-tight">Jadwalkan Kunjungan Anda Tanpa Perlu Antre Lama</h2>
+        <p class="text-xs sm:text-sm text-[#3A5A40] leading-relaxed">
+          Kirim permintaan jadwal Anda langsung ke tim Front Office Yovela Dental Clinic untuk konfirmasi slot dokter.
+        </p>
+      </div>
+
+      <div class="lg:col-span-7">
+        <form id="staticBookingForm" class="bg-[#FAF7F0] border border-[#DED6C5] rounded-[28px] p-6 sm:p-8 shadow-md space-y-4 text-xs">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block font-bold text-[#1B4332] mb-1">Nama Lengkap *</label>
+              <input id="bName" required placeholder="Contoh: Rina Anggraini" class="w-full px-3.5 py-2.5 rounded-xl border border-[#DED6C5] bg-white font-semibold outline-none focus:border-[#1B4332]" />
+            </div>
+            <div>
+              <label class="block font-bold text-[#1B4332] mb-1">Nomor WhatsApp *</label>
+              <input id="bPhone" required placeholder="0812-3456-7890" class="w-full px-3.5 py-2.5 rounded-xl border border-[#DED6C5] bg-white font-mono outline-none focus:border-[#1B4332]" />
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block font-bold text-[#1B4332] mb-1">Tanggal Kunjungan *</label>
+              <input id="bDate" type="date" required class="w-full px-3.5 py-2.5 rounded-xl border border-[#DED6C5] bg-white font-semibold outline-none focus:border-[#1B4332]" />
+            </div>
+            <div>
+              <label class="block font-bold text-[#1B4332] mb-1">Jam Kunjungan *</label>
+              <select id="bTime" class="w-full px-3.5 py-2.5 rounded-xl border border-[#DED6C5] bg-white font-mono font-semibold outline-none focus:border-[#1B4332]">
+                <option value="09:00">09:00 WIB</option>
+                <option value="10:00">10:00 WIB</option>
+                <option value="11:00">11:00 WIB</option>
+                <option value="14:00">14:00 WIB</option>
+                <option value="16:00">16:00 WIB</option>
+                <option value="19:00">19:00 WIB</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label class="block font-bold text-[#1B4332] mb-1">Layanan / Keluhan Utama *</label>
+            <input id="bService" required value="Konsultasi & Pemeriksaan Gigi" class="w-full px-3.5 py-2.5 rounded-xl border border-[#DED6C5] bg-white outline-none focus:border-[#1B4332]" />
+          </div>
+          <button type="submit" class="w-full py-3.5 rounded-2xl bg-[#E63946] hover:bg-[#D62828] text-white font-bold shadow-lg shadow-[#E63946]/25 cursor-pointer transition">
+            Konfirmasi Booking via WhatsApp Klinik
+          </button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER PROFESIONAL ALA ELECTRONJS (5 KOLOM) -->
   <footer class="bg-[#0E261C] text-[#D8E8DF] border-t border-[#2D6A4F]/50 mt-auto">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 grid grid-cols-1 md:grid-cols-4 gap-8 text-xs">
-      <div class="space-y-2">
-        <strong class="text-base text-[#FAF7F0] block">Yovela Dental Clinic</strong>
-        <p class="text-[#A3C9B5]">Klinik gigi modern dengan rekam medis digital FDI &amp; SATUSEHAT Ready.</p>
-      </div>
-      <div class="space-y-2">
-        <strong class="uppercase text-[#FAF7F0] block">Layanan</strong>
-        <a href="#layanan" class="block text-[#A3C9B5] hover:text-white">Scaling &amp; Preventif</a>
-        <a href="#layanan" class="block text-[#A3C9B5] hover:text-white">Konservasi &amp; PSA</a>
-        <a href="#layanan" class="block text-[#A3C9B5] hover:text-white">Ortodonti &amp; Estetika</a>
-      </div>
-      <div class="space-y-2">
-        <strong class="uppercase text-[#FAF7F0] block">Klinik</strong>
-        <a href="#profil" class="block text-[#A3C9B5] hover:text-white">Tentang Kami</a>
-        <a href="#booking" class="block text-[#A3C9B5] hover:text-white">Booking Online</a>
-      </div>
-      <div class="space-y-2">
-        <strong class="uppercase text-[#FAF7F0] block">Kontak</strong>
-        <p class="text-[#A3C9B5]">Jl. Pemuda No. 45, Semarang</p>
-        <p class="text-[#A3C9B5] font-mono">(024) 8765-4321</p>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10">
+        <div class="lg:col-span-4 space-y-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-[#1B4332] border border-[#40916C]/50 flex items-center justify-center">
+              <svg viewBox="0 0 512 512" class="w-5 h-5 fill-[#FAF7F0]">
+                <path d="M416 112c-35.3 0-64 28.7-64 64v51.2c0 23.4-12.2 44.9-32.3 56.8L272 312.6l-47.7-28.6c-20.1-12-32.3-33.5-32.3-56.8V176c0-35.3-28.7-64-64-64S64 140.7 64 176c0 86.8 52.3 162.7 128 193.3V432c0 17.7 14.3 32 32 32h64c17.7 0 32-14.3 32-32V369.3c75.7-30.6 128-106.5 128-193.3c0-35.3-28.7-64-64-64z" />
+              </svg>
+            </div>
+            <div>
+              <span class="font-extrabold text-base text-[#FAF7F0] block leading-none">Yovela Dental Clinic</span>
+              <span class="text-[11px] text-[#95D5B2]">SIM-RME &amp; Modern Dental Care</span>
+            </div>
+          </div>
+          <p class="text-xs text-[#A3C9B5] leading-relaxed">
+            Klinik gigi modern dengan rekam medis elektronik terintegrasi, odontogram digital FDI, dan pelayanan ramah keluarga di Semarang.
+          </p>
+          <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#1B4332] border border-[#2D6A4F] text-[11px] font-mono text-[#FAF7F0]">
+            <span class="w-2 h-2 rounded-full bg-[#95D5B2]"></span>
+            <span>SIP.503/449/DRG/2026</span>
+          </div>
+        </div>
+
+        <div class="lg:col-span-2 space-y-3">
+          <h4 class="text-xs font-extrabold uppercase tracking-wider text-[#FAF7F0]">Layanan</h4>
+          <ul class="space-y-2 text-xs text-[#A3C9B5]">
+            <li><a href="#layanan" class="hover:text-white transition">Pemeriksaan &amp; Odontogram</a></li>
+            <li><a href="#layanan" class="hover:text-white transition">Scaling &amp; Periodonsia</a></li>
+            <li><a href="#layanan" class="hover:text-white transition">Konservasi &amp; PSA</a></li>
+            <li><a href="#layanan" class="hover:text-white transition">Ortodonti &amp; Estetika</a></li>
+            <li><a href="#layanan" class="hover:text-white transition">Bedah Mulut Minor</a></li>
+          </ul>
+        </div>
+
+        <div class="lg:col-span-2 space-y-3">
+          <h4 class="text-xs font-extrabold uppercase tracking-wider text-[#FAF7F0]">Klinik</h4>
+          <ul class="space-y-2 text-xs text-[#A3C9B5]">
+            <li><a href="#profil" class="hover:text-white transition">Tentang Kami</a></li>
+            <li><a href="#dokter" class="hover:text-white transition">Profil Dokter</a></li>
+            <li><a href="#testimoni" class="hover:text-white transition">Testimoni Pasien</a></li>
+            <li><a href="#booking" class="hover:text-white transition">Booking Online</a></li>
+          </ul>
+        </div>
+
+        <div class="lg:col-span-2 space-y-3">
+          <h4 class="text-xs font-extrabold uppercase tracking-wider text-[#FAF7F0]">Pasien &amp; Lokasi</h4>
+          <ul class="space-y-2 text-xs text-[#A3C9B5]">
+            <li><a href="#booking" class="hover:text-white transition">Jadwalkan Kunjungan</a></li>
+            <li><a href="#testimoni" class="hover:text-white transition">Ulasan Pasien</a></li>
+            <li><a href="https://www.google.com/maps/search/?api=1&query=Yovela+Dental+Clinic+Semarang" target="_blank" rel="noopener noreferrer" class="hover:text-white transition">Google Maps Review</a></li>
+            <li><a href="#profil" class="hover:text-white transition">Standar Sterilisasi</a></li>
+          </ul>
+        </div>
+
+        <div class="lg:col-span-2 space-y-3">
+          <h4 class="text-xs font-extrabold uppercase tracking-wider text-[#FAF7F0]">Kontak</h4>
+          <ul class="space-y-2 text-xs text-[#A3C9B5]">
+            <li>Jl. Pemuda No. 45, Semarang</li>
+            <li class="font-mono">(024) 8765-4321</li>
+            <li>Senin–Jumat: 09.00–20.00</li>
+            <li>Sabtu: 09.00–17.00</li>
+          </ul>
+        </div>
       </div>
     </div>
-    <div class="border-t border-[#1B4332] bg-[#0A1C15] py-4 text-center text-[11px] text-[#8FB8A3]">
-      © 2026 Yovela Dental Clinic. All Rights Reserved.
+    <div class="border-t border-[#1B4332] bg-[#0A1C15]">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-wrap items-center justify-between gap-3 text-[11px] text-[#8FB8A3]">
+        <p>© 2026 Yovela Dental Clinic. Seluruh hak cipta dilindungi.</p>
+        <div class="flex items-center gap-4">
+          <span>Standar RME Permenkes RI</span>
+          <span>•</span>
+          <span>FHIR R4 SATUSEHAT Ready</span>
+        </div>
+      </div>
     </div>
   </footer>
 
   <script>
+    document.getElementById('bDate').valueAsDate = new Date();
     document.getElementById('staticBookingForm').addEventListener('submit', function (e) {
       e.preventDefault();
       var name = document.getElementById('bName').value;
       var phone = document.getElementById('bPhone').value;
       var date = document.getElementById('bDate').value;
+      var time = document.getElementById('bTime').value;
       var service = document.getElementById('bService').value;
-      var msg = encodeURIComponent('Halo Yovela Dental Clinic, saya ' + name + ' (' + phone + ') ingin booking jadwal ' + service + ' pada tanggal ' + date + '.');
+      var msg = encodeURIComponent('Halo Yovela Dental Clinic, saya ' + name + ' (' + phone + ') ingin booking jadwal ' + service + ' pada tanggal ' + date + ' pukul ' + time + ' WIB.');
       window.open('https://wa.me/6281234567890?text=' + msg, '_blank');
     });
   </script>
