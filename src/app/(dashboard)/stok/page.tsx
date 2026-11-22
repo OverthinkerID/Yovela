@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { AppIcon } from '@/components/AppIcon';
 import { CustomSelect } from '@/components/CustomSelect';
+import { TablePagination } from '@/components/TablePagination';
 import { useAuth } from '../../../context/AuthContext';
 import { useToast } from '../../../context/ToastContext';
 
@@ -41,6 +42,8 @@ export default function StokBhpPage() {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [isLoading, setIsLoading] = useState(true);
 
   // Modal Tambah Item Baru
@@ -87,6 +90,15 @@ export default function StokBhpPage() {
       return matchSearch && matchCat;
     });
   }, [items, searchQuery, categoryFilter]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, categoryFilter]);
+
+  const paginatedItems = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredItems.slice(start, start + pageSize);
+  }, [filteredItems, currentPage, pageSize]);
 
   const summary = useMemo(() => {
     const lowStock = items.filter((i) => i.stockQty <= i.minStock).length;
@@ -245,10 +257,10 @@ export default function StokBhpPage() {
           <div className="md:hidden divide-y divide-slate-100">
             {isLoading ? (
               <div className="p-8 text-center text-xs text-slate-400">Memuat inventaris BHP...</div>
-            ) : filteredItems.length === 0 ? (
+            ) : paginatedItems.length === 0 ? (
               <div className="p-8 text-center text-xs text-slate-400">Tidak ada item BHP yang cocok.</div>
             ) : (
-              filteredItems.map((item) => {
+              paginatedItems.map((item) => {
                 const isLow = item.stockQty <= item.minStock;
                 return (
                   <div key={item.id} className="p-4 space-y-3 text-xs">
@@ -315,12 +327,12 @@ export default function StokBhpPage() {
                   <tr>
                     <td colSpan={7} className="text-center py-10 text-slate-400">Memuat inventaris BHP...</td>
                   </tr>
-                ) : filteredItems.length === 0 ? (
+                ) : paginatedItems.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="text-center py-10 text-slate-400">Tidak ada item BHP yang cocok.</td>
                   </tr>
                 ) : (
-                  filteredItems.map((item) => {
+                  paginatedItems.map((item) => {
                     const isLow = item.stockQty <= item.minStock;
                     return (
                       <tr key={item.id} className="hover:bg-slate-50/70 transition">
@@ -375,6 +387,14 @@ export default function StokBhpPage() {
               </tbody>
             </table>
           </div>
+
+          <TablePagination
+            totalItems={filteredItems.length}
+            currentPage={currentPage}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+          />
         </div>
       </main>
 

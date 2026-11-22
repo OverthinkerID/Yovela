@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { AppIcon } from "@/components/AppIcon";
-import { PatientRecord } from '../../../data/patientDatabase';
-import { TREATMENTS, Treatment } from '../../../data/mockData';
+import { PatientRecord, Treatment } from '../../../types/clinic';
 import { InvoiceReceipt, InvoiceData } from '../../../components/InvoiceReceipt';
 import { CustomSelect } from '../../../components/CustomSelect';
 import { QrisEdcPanel } from '../../../components/QrisEdcPanel';
@@ -46,7 +45,7 @@ interface TransactionItem {
 export default function KasirBillingPage() {
   const { currentUser } = useAuth();
   const [patients, setPatients] = useState<PatientRecord[]>([]);
-  const [treatmentCatalog, setTreatmentCatalog] = useState<Treatment[]>(TREATMENTS);
+  const [treatmentCatalog, setTreatmentCatalog] = useState<Treatment[]>([]);
   const [selectedPatientId, setSelectedPatientId] = useState<string>('');
   const [transactions, setTransactions] = useState<TransactionItem[]>([]);
   const [activeTab, setActiveTab] = useState<'billing' | 'riwayat'>('billing');
@@ -120,13 +119,14 @@ export default function KasirBillingPage() {
   }, [patients, selectedPatientId]);
 
   const patientTreatments = useMemo<Treatment[]>(() => {
+    if (treatmentCatalog.length === 0) return [];
     if (!activePatient || !activePatient.lastSoap?.suggestedTreatments) {
-      return [treatmentCatalog[0] || TREATMENTS[0]];
+      return [treatmentCatalog[0]];
     }
     const matched = treatmentCatalog.filter((t) =>
       activePatient.lastSoap?.suggestedTreatments?.includes(t.id)
     );
-    return matched.length > 0 ? matched : [treatmentCatalog[0] || TREATMENTS[0]];
+    return matched.length > 0 ? matched : [treatmentCatalog[0]];
   }, [activePatient, treatmentCatalog]);
 
   const subtotalAmount = useMemo(() => {
@@ -774,7 +774,7 @@ export default function KasirBillingPage() {
                               patientName: trx.patientName,
                               rmNumber: trx.rmNumber,
                               doctorName: trx.doctorName,
-                              treatments: TREATMENTS.filter((t) => trx.treatments.includes(t.name)),
+                              treatments: treatmentCatalog.filter((t) => trx.treatments.includes(t.name)),
                               subtotal: trx.subtotal,
                               discountAmount: trx.discountAmount,
                               discountNote: trx.discountNote,

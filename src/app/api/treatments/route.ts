@@ -1,17 +1,19 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '../../../lib/prisma';
 import { requireAuth } from '../../../lib/auth';
+import { getClinicRepository } from '../../../lib/services/clinicService';
 
 export async function GET() {
   const { errorResponse } = await requireAuth(['DOKTER', 'DOKTER_LAIN', 'PENDAFTARAN', 'KASIR']);
   if (errorResponse) return errorResponse;
 
-  const treatments = await prisma.treatment.findMany({
-    where: { isActive: true },
-    orderBy: { id: 'asc' },
-  });
-
-  return NextResponse.json({ treatments });
+  try {
+    const treatments = await getClinicRepository().listTreatments();
+    return NextResponse.json({ treatments });
+  } catch (err) {
+    console.error('GET /api/treatments error:', err);
+    return NextResponse.json({ error: 'Gagal memuat daftar tindakan dari database.' }, { status: 500 });
+  }
 }
 
 export async function POST(request: Request) {

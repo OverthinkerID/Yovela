@@ -1,4 +1,4 @@
-import { PatientRecord } from '../data/patientDatabase';
+import { PatientRecord } from '../types/clinic';
 
 export interface PatientWithEncounterRecord extends PatientRecord {
   encounterId: string;

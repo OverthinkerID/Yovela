@@ -3,12 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { AppIcon } from "@/components/AppIcon";
 import Link from 'next/link';
-import { 
-  getStoredPatients, 
-  saveStoredPatients, 
-  setActivePatient, 
-  PatientRecord 
-} from '../../../data/patientDatabase';
+import { PatientRecord } from '../../../types/clinic';
 import { useAuth } from '../../../context/AuthContext';
 
 export default function AntreanPoliPage() {
@@ -57,8 +52,8 @@ export default function AntreanPoliPage() {
       }
 
       const updatedPatient: PatientRecord = data.patient;
-      if (newStatus === 'Sedang Diperiksa') {
-        setActivePatient(updatedPatient);
+      if (newStatus === 'Sedang Diperiksa' && typeof window !== 'undefined') {
+        localStorage.setItem('yovela_active_patient_id', updatedPatient.id);
       }
       setPatients((prev) => prev.map((p) => (p.id === patientId ? updatedPatient : p)));
       setToastMessage(`Status pasien berhasil diubah menjadi: ${newStatus}`);
@@ -379,7 +374,9 @@ export default function AntreanPoliPage() {
                         {patient.statusKunjungan === 'Sedang Diperiksa' && (
                           <Link
                             href="/poli"
-                            onClick={() => setActivePatient(patient)}
+                            onClick={() => {
+                              if (typeof window !== 'undefined') localStorage.setItem('yovela_active_patient_id', patient.id);
+                            }}
                             className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition cursor-pointer shadow-xs flex items-center gap-1.5"
                           >
                             <AppIcon name="notes-medical" className="text-[#2D6A4F] text-[11px]" />
@@ -404,7 +401,9 @@ export default function AntreanPoliPage() {
                         {patient.statusKunjungan === 'Menunggu Pembayaran' && (
                           <Link
                             href="/kasir"
-                            onClick={() => setActivePatient(patient)}
+                            onClick={() => {
+                              if (typeof window !== 'undefined') localStorage.setItem('yovela_active_patient_id', patient.id);
+                            }}
                             className="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition cursor-pointer shadow-2xs flex items-center gap-1"
                             title="Buka loket kasir untuk memproses pembayaran"
                           >
@@ -483,7 +482,9 @@ export default function AntreanPoliPage() {
                 {currentActivePatient ? (
                   <Link
                     href="/poli"
-                    onClick={() => setActivePatient(currentActivePatient)}
+                    onClick={() => {
+                      if (typeof window !== 'undefined') localStorage.setItem('yovela_active_patient_id', currentActivePatient.id);
+                    }}
                     className="flex-1 py-2.5 rounded-xl bg-[#E63946] hover:bg-[#D62828] text-white text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer shadow-sm"
                   >
                     <AppIcon name="tooth" className="text-xs" />

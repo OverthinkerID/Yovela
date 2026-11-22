@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { AppIcon } from "@/components/AppIcon";
 import { CustomSelect } from '@/components/CustomSelect';
 import Link from 'next/link';
-import { PatientRecord } from '../../../data/patientDatabase';
+import { PatientRecord } from '../../../types/clinic';
 
 interface DoctorOption {
   id: string;

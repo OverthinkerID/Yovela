@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { AppIcon } from "@/components/AppIcon";
 import { CustomSelect } from '@/components/CustomSelect';
+import { TablePagination } from '@/components/TablePagination';
 import { useAuth } from '../../../context/AuthContext';
 import { useToast } from '../../../context/ToastContext';
 
@@ -69,9 +70,22 @@ export default function LaporanKeuanganPage() {
   const [expAmount, setExpAmount] = useState('');
   const [isSavingExp, setIsSavingExp] = useState(false);
 
-  // Kalkulator Gaji Dokter Berbasis Tarif Pelayanan & Potongan Bahan (Behel, dll)
+  // Pagination Tabel Pemasukan & Pengeluaran
+  const [trxPage, setTrxPage] = useState<number>(1);
+  const [trxPageSize, setTrxPageSize] = useState<number>(10);
+  const [expPage, setExpPage] = useState<number>(1);
+  const [expPageSize, setExpPageSize] = useState<number>(10);
+
+  // Kalkulator Gaji Dokter Berbasis Tarif Pelayanan & Potongan Bahan (8 Parameter)
   const [doctorFeeRate, setDoctorFeeRate] = useState<number>(40);
+  const [doctorFeeSchema, setDoctorFeeSchema] = useState<'FLAT' | 'TIERED'>('FLAT');
   const [selectedFeeDoctor, setSelectedFeeDoctor] = useState<string>('ALL');
+  const [stdBhpPercent, setStdBhpPercent] = useState<number>(5);
+  const [labFeeDeduction, setLabFeeDeduction] = useState<number>(0);
+  const [orthoMaterialDeduction, setOrthoMaterialDeduction] = useState<number>(0);
+  const [taxRatePercent, setTaxRatePercent] = useState<number>(0);
+  const [attendanceAllowance, setAttendanceAllowance] = useState<number>(0);
+  const [targetBonus, setTargetBonus] = useState<number>(0);
   const [serviceMaterialDeductions, setServiceMaterialDeductions] = useState<Record<string, number>>({});
   const [isSavingDoctorFee, setIsSavingDoctorFee] = useState(false);
 
@@ -139,6 +153,24 @@ export default function LaporanKeuanganPage() {
     });
   }, [transactions, searchQuery, filterMethod, startDate, endDate]);
 
+  useEffect(() => {
+    setTrxPage(1);
+  }, [searchQuery, filterMethod, startDate, endDate]);
+
+  useEffect(() => {
+    setExpPage(1);
+  }, [periodMode, selectedMonth, selectedYear, expenses.length]);
+
+  const paginatedTrx = useMemo(() => {
+    const start = (trxPage - 1) * trxPageSize;
+    return filteredData.slice(start, start + trxPageSize);
+  }, [filteredData, trxPage, trxPageSize]);
+
+  const paginatedExpenses = useMemo(() => {
+    const start = (expPage - 1) * expPageSize;
+    return expenses.slice(start, start + expPageSize);
+  }, [expenses, expPage, expPageSize]);
+
   const summary = useMemo(() => {
     const totalTagihan = filteredData.reduce((acc, curr) => acc + curr.amount, 0);
     const totalOmset = filteredData.reduce((acc, curr) => acc + (curr.paidAmount ?? curr.amount), 0);
@@ -201,23 +233,57 @@ export default function LaporanKeuanganPage() {
     });
 
     const services = Array.from(serviceMap.values());
-    const totalMaterialDeduction = services.reduce(
+    const perServiceDeduction = services.reduce(
       (sum, srv) => sum + Math.max(0, serviceMaterialDeductions[srv.name] || 0),
       0
     );
+    const stdBhpDeduction = Math.round((grossRevenue * Math.max(0, Math.min(100, stdBhpPercent))) / 100);
+    const totalMaterialDeduction =
+      perServiceDeduction +
+      stdBhpDeduction +
+      Math.max(0, labFeeDeduction) +
+      Math.max(0, orthoMaterialDeduction);
     const netBase = Math.max(0, grossRevenue - totalMaterialDeduction);
-    const doctorFeeAmount = Math.round((netBase * Math.max(0, Math.min(100, doctorFeeRate))) / 100);
+    const effectiveRate =
+      doctorFeeSchema === 'TIERED' && netBase >= 15000000
+        ? Math.min(100, doctorFeeRate + 5)
+        : Math.max(0, Math.min(100, doctorFeeRate));
+    const grossDoctorFee = Math.round((netBase * effectiveRate) / 100);
+    const taxAmount = Math.round((grossDoctorFee * Math.max(0, Math.min(50, taxRatePercent))) / 100);
+    const doctorFeeAmount = Math.max(
+      0,
+      grossDoctorFee - taxAmount + Math.max(0, attendanceAllowance) + Math.max(0, targetBonus)
+    );
 
     return {
       doctorList,
       trxCount: periodTrx.length,
       grossRevenue,
       services,
+      stdBhpDeduction,
       totalMaterialDeduction,
       netBase,
+      effectiveRate,
+      grossDoctorFee,
+      taxAmount,
       doctorFeeAmount,
     };
-  }, [transactions, periodMode, selectedMonth, selectedYear, selectedFeeDoctor, serviceMaterialDeductions, doctorFeeRate]);
+  }, [
+    transactions,
+    periodMode,
+    selectedMonth,
+    selectedYear,
+    selectedFeeDoctor,
+    serviceMaterialDeductions,
+    doctorFeeRate,
+    doctorFeeSchema,
+    stdBhpPercent,
+    labFeeDeduction,
+    orthoMaterialDeduction,
+    taxRatePercent,
+    attendanceAllowance,
+    targetBonus,
+  ]);
 
   const handleRecordDoctorFee = async () => {
     if (doctorFeeCalc.doctorFeeAmount <= 0) {
@@ -228,7 +294,7 @@ export default function LaporanKeuanganPage() {
     try {
       const docLabel = selectedFeeDoctor === 'ALL' ? clinicDoctor : selectedFeeDoctor;
       const periodLabel = periodMode === 'BULANAN' ? selectedMonth : periodMode === 'TAHUNAN' ? selectedYear : 'Semua Periode';
-      const desc = `Fee ${docLabel} (${doctorFeeRate}% x Netto Rp ${doctorFeeCalc.netBase.toLocaleString('id-ID')} setelah potong bahan Rp ${doctorFeeCalc.totalMaterialDeduction.toLocaleString('id-ID')}) — ${periodLabel}`;
+      const desc = `Fee ${docLabel} (${doctorFeeCalc.effectiveRate}% x Netto Rp ${doctorFeeCalc.netBase.toLocaleString('id-ID')}, Potong Bahan/Lab Rp ${doctorFeeCalc.totalMaterialDeduction.toLocaleString('id-ID')}, PPh Rp ${doctorFeeCalc.taxAmount.toLocaleString('id-ID')}, Tunjangan/Bonus Rp ${(attendanceAllowance + targetBonus).toLocaleString('id-ID')}) — ${periodLabel}`;
 
       const res = await fetch('/api/expenses', {
         method: 'POST',
@@ -368,7 +434,7 @@ export default function LaporanKeuanganPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F1E8] text-slate-800 font-['Poppins',sans-serif] flex flex-col antialiased pb-12">
+    <div className="min-h-screen bg-[#F5F1E8] text-slate-800 font-['Poppins',sans-serif] flex flex-col antialiased pb-12 print:min-h-0 print:bg-white print:pb-0">
       {/* 1. SUB-BAR AKSI LAPORAN */}
       <div className="bg-white border-b border-slate-200/80 px-4 sm:px-6 lg:px-8 xl:px-10 py-3 print:hidden">
         <div className="max-w-[1440px] w-full mx-auto flex flex-wrap items-center justify-between gap-3">
@@ -550,12 +616,12 @@ export default function LaporanKeuanganPage() {
 
               {/* TAMPILAN KARTU MOBILE (< md) */}
               <div className="md:hidden divide-y divide-slate-100">
-                {filteredData.length === 0 ? (
+                {paginatedTrx.length === 0 ? (
                   <div className="text-center py-10 px-4 text-slate-400 text-xs">
                     Tidak ditemukan transaksi dalam periode atau filter yang dipilih.
                   </div>
                 ) : (
-                  filteredData.map((trx) => {
+                  paginatedTrx.map((trx) => {
                     const paid = trx.paidAmount ?? trx.amount;
                     const rem = trx.remainingAmount ?? 0;
                     const isPartial = trx.status === 'PARTIAL' || rem > 0;
@@ -601,14 +667,14 @@ export default function LaporanKeuanganPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {filteredData.length === 0 ? (
+                    {paginatedTrx.length === 0 ? (
                       <tr>
                         <td colSpan={7} className="text-center py-12 text-slate-400 text-xs">
                           Tidak ditemukan transaksi dalam periode atau filter yang dipilih.
                         </td>
                       </tr>
                     ) : (
-                      filteredData.map((trx) => {
+                      paginatedTrx.map((trx) => {
                         const paid = trx.paidAmount ?? trx.amount;
                         const rem = trx.remainingAmount ?? 0;
                         const isPartial = trx.status === 'PARTIAL' || rem > 0;
@@ -644,6 +710,14 @@ export default function LaporanKeuanganPage() {
                   </tbody>
                 </table>
               </div>
+
+              <TablePagination
+                totalItems={filteredData.length}
+                currentPage={trxPage}
+                pageSize={trxPageSize}
+                onPageChange={setTrxPage}
+                onPageSizeChange={setTrxPageSize}
+              />
             </div>
           </main>
         </>
@@ -768,9 +842,9 @@ export default function LaporanKeuanganPage() {
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <div>
-                <label className="block font-bold text-[#1B4332] mb-1">Dokter Pemeriksa</label>
+                <label className="block font-bold text-[#1B4332] mb-1">1. Dokter Pemeriksa</label>
                 <CustomSelect
                   value={selectedFeeDoctor}
                   onChange={setSelectedFeeDoctor}
@@ -781,7 +855,18 @@ export default function LaporanKeuanganPage() {
                 />
               </div>
               <div>
-                <label className="block font-bold text-[#1B4332] mb-1">Persentase Tarif Dokter (%)</label>
+                <label className="block font-bold text-[#1B4332] mb-1">2. Skema Bagi Hasil</label>
+                <CustomSelect
+                  value={doctorFeeSchema}
+                  onChange={(v) => setDoctorFeeSchema(v as 'FLAT' | 'TIERED')}
+                  options={[
+                    { value: 'FLAT', label: 'Persentase Flat (%)' },
+                    { value: 'TIERED', label: 'Progresif (+5% >= Rp 15 Jt)' },
+                  ]}
+                />
+              </div>
+              <div>
+                <label className="block font-bold text-[#1B4332] mb-1">3. Tarif Dasar Dokter (%)</label>
                 <input
                   type="number"
                   min={0}
@@ -791,18 +876,97 @@ export default function LaporanKeuanganPage() {
                   className="w-full px-3 py-2 rounded-xl border border-[#DED6C5] bg-slate-50 font-mono font-bold text-[#1B4332] outline-none focus:border-[#1B4332]"
                 />
               </div>
-              <div className="p-3 rounded-2xl bg-[#FAF7F0] border border-[#DED6C5] flex flex-col justify-center">
-                <span className="text-[10px] font-bold uppercase text-[#52796F]">Estimasi Gaji Dokter ({doctorFeeRate}%)</span>
-                <strong className="text-lg font-black font-mono text-[#E63946]">
+              <div>
+                <label className="block font-bold text-[#1B4332] mb-1">4. Potongan BHP Standar (%)</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={stdBhpPercent}
+                  onChange={(e) => setStdBhpPercent(Number(e.target.value || 0))}
+                  className="w-full px-3 py-2 rounded-xl border border-[#DED6C5] bg-slate-50 font-mono font-bold text-[#1B4332] outline-none focus:border-[#1B4332]"
+                />
+              </div>
+              <div>
+                <label className="block font-bold text-[#1B4332] mb-1">5. Potongan Lab Gigi (Rp)</label>
+                <input
+                  type="number"
+                  min={0}
+                  placeholder="0"
+                  value={labFeeDeduction || ''}
+                  onChange={(e) => setLabFeeDeduction(Number(e.target.value || 0))}
+                  className="w-full px-3 py-2 rounded-xl border border-[#DED6C5] bg-slate-50 font-mono font-bold text-[#1B4332] outline-none focus:border-[#1B4332]"
+                />
+              </div>
+              <div>
+                <label className="block font-bold text-[#1B4332] mb-1">6. Bahan Behel / Khusus (Rp)</label>
+                <input
+                  type="number"
+                  min={0}
+                  placeholder="0"
+                  value={orthoMaterialDeduction || ''}
+                  onChange={(e) => setOrthoMaterialDeduction(Number(e.target.value || 0))}
+                  className="w-full px-3 py-2 rounded-xl border border-[#DED6C5] bg-slate-50 font-mono font-bold text-[#1B4332] outline-none focus:border-[#1B4332]"
+                />
+              </div>
+              <div>
+                <label className="block font-bold text-[#1B4332] mb-1">7. Pajak Jasa Medis / PPh (%)</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={50}
+                  step={0.5}
+                  placeholder="0"
+                  value={taxRatePercent || ''}
+                  onChange={(e) => setTaxRatePercent(Number(e.target.value || 0))}
+                  className="w-full px-3 py-2 rounded-xl border border-[#DED6C5] bg-slate-50 font-mono font-bold text-[#1B4332] outline-none focus:border-[#1B4332]"
+                />
+              </div>
+              <div>
+                <label className="block font-bold text-[#1B4332] mb-1">8. Uang Duduk + Bonus (Rp)</label>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <input
+                    type="number"
+                    min={0}
+                    placeholder="U. Duduk"
+                    title="Tunjangan Hadir / Uang Duduk (Rp)"
+                    value={attendanceAllowance || ''}
+                    onChange={(e) => setAttendanceAllowance(Number(e.target.value || 0))}
+                    className="w-full px-2.5 py-2 rounded-xl border border-[#DED6C5] bg-slate-50 font-mono font-bold text-[#1B4332] outline-none focus:border-[#1B4332]"
+                  />
+                  <input
+                    type="number"
+                    min={0}
+                    placeholder="Bonus"
+                    title="Bonus Target Omset / Pasien (Rp)"
+                    value={targetBonus || ''}
+                    onChange={(e) => setTargetBonus(Number(e.target.value || 0))}
+                    className="w-full px-2.5 py-2 rounded-xl border border-[#DED6C5] bg-slate-50 font-mono font-bold text-[#1B4332] outline-none focus:border-[#1B4332]"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-[#FAF7F0] border border-[#DED6C5] flex flex-wrap items-center justify-between gap-3">
+              <div className="space-y-0.5">
+                <span className="text-[10px] font-bold uppercase text-[#52796F] block">
+                  Estimasi Take-Home Gaji Dokter (Tarif Efektif {doctorFeeCalc.effectiveRate}%)
+                </span>
+                <strong className="text-xl font-black font-mono text-[#E63946]">
                   Rp {doctorFeeCalc.doctorFeeAmount.toLocaleString('id-ID')}
                 </strong>
+              </div>
+              <div className="flex flex-wrap gap-3 text-[11px] text-[#52796F]">
+                <span>BHP Standar ({stdBhpPercent}%): <strong className="font-mono text-[#1B4332]">-Rp {doctorFeeCalc.stdBhpDeduction.toLocaleString('id-ID')}</strong></span>
+                <span>PPh ({taxRatePercent}%): <strong className="font-mono text-[#E63946]">-Rp {doctorFeeCalc.taxAmount.toLocaleString('id-ID')}</strong></span>
+                <span>Tunjangan &amp; Bonus: <strong className="font-mono text-[#2D6A4F]">+Rp {(attendanceAllowance + targetBonus).toLocaleString('id-ID')}</strong></span>
               </div>
             </div>
 
             {doctorFeeCalc.services.length > 0 && (
               <div className="space-y-2">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-[#52796F] block">
-                  Potongan Biaya Bahan / Lab per Pelayanan (Isi Rp 0 jika tanpa potongan bahan):
+                  Potongan Tambahan Biaya Bahan / Lab per Pelayanan Transaksi:
                 </span>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
                   {doctorFeeCalc.services.map((srv) => (
@@ -843,7 +1007,7 @@ export default function LaporanKeuanganPage() {
             <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100">
               <div className="flex flex-wrap items-center gap-4 text-[11px]">
                 <span>Pendapatan Kotor: <strong className="font-mono text-[#1B4332]">Rp {doctorFeeCalc.grossRevenue.toLocaleString('id-ID')}</strong></span>
-                <span>Potong Bahan: <strong className="font-mono text-[#E63946]">-Rp {doctorFeeCalc.totalMaterialDeduction.toLocaleString('id-ID')}</strong></span>
+                <span>Total Potongan: <strong className="font-mono text-[#E63946]">-Rp {doctorFeeCalc.totalMaterialDeduction.toLocaleString('id-ID')}</strong></span>
                 <span>Dasar Netto: <strong className="font-mono text-[#1B4332]">Rp {doctorFeeCalc.netBase.toLocaleString('id-ID')}</strong></span>
               </div>
               <button
@@ -953,12 +1117,12 @@ export default function LaporanKeuanganPage() {
                 </div>
                 {/* TAMPILAN KARTU MOBILE (< md) */}
                 <div className="md:hidden divide-y divide-slate-100">
-                  {expenses.length === 0 ? (
+                  {paginatedExpenses.length === 0 ? (
                     <div className="text-center py-8 px-4 text-slate-400 text-xs">
                       Belum ada catatan pengeluaran pada periode ini.
                     </div>
                   ) : (
-                    expenses.map((item) => (
+                    paginatedExpenses.map((item) => (
                       <div key={item.id} className="p-4 space-y-2 text-xs">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
@@ -997,14 +1161,14 @@ export default function LaporanKeuanganPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {expenses.length === 0 ? (
+                      {paginatedExpenses.length === 0 ? (
                         <tr>
                           <td colSpan={6} className="text-center py-10 text-slate-400">
                             Belum ada catatan pengeluaran pada periode ini.
                           </td>
                         </tr>
                       ) : (
-                        expenses.map((item) => (
+                        paginatedExpenses.map((item) => (
                           <tr key={item.id} className="hover:bg-slate-50/70">
                             <td className="py-3 px-4 font-mono text-[11px] text-slate-500">{item.date}</td>
                             <td className="py-3 px-4 font-bold text-[#1B4332]">{item.category}</td>
@@ -1033,6 +1197,14 @@ export default function LaporanKeuanganPage() {
                     </tbody>
                   </table>
                 </div>
+
+                <TablePagination
+                  totalItems={expenses.length}
+                  currentPage={expPage}
+                  pageSize={expPageSize}
+                  onPageChange={setExpPage}
+                  onPageSizeChange={setExpPageSize}
+                />
               </div>
             </div>
           </div>
@@ -1042,7 +1214,7 @@ export default function LaporanKeuanganPage() {
       {/* =========================================================================
           4. DOKUMEN CETAK LAPORAN KEUANGAN RESMI (HANYA AKTIF SAAT WINDOW.PRINT)
          ========================================================================= */}
-      <section className="hidden print:block fixed inset-0 m-0 p-8 bg-white text-black font-sans text-xs z-[99999]">
+      <section className="hidden print:block w-full m-0 p-4 bg-white text-black font-sans text-xs">
         <div className="border-b-2 border-black pb-4 mb-4 flex justify-between items-center">
           <div>
             <h1 className="text-xl font-bold uppercase tracking-wider text-black">Yovela Dental Clinic</h1>

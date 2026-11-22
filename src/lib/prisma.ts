@@ -1,4 +1,9 @@
 import { PrismaClient } from '@prisma/client';
+import { validateEnvironment } from './environment';
+
+if (typeof window === 'undefined') {
+  validateEnvironment();
+}
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;

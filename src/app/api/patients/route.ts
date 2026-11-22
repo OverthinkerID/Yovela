@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { prisma } from '../../../lib/prisma';
 import { requireAuth } from '../../../lib/auth';
 import { serializePatientWithEncounter } from '../../../lib/serializers';
+import { getClinicRepository } from '../../../lib/services/clinicService';
+import { isMockDataMode } from '../../../lib/environment';
 
 async function getNextQueueNumber(visitDate: string): Promise<string> {
   const todayEncounters = await prisma.encounter.findMany({
@@ -29,60 +31,52 @@ async function getNextRmNumber(): Promise<string> {
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const view = searchParams.get('view');
+  const view = searchParams.get('view') === 'tv' ? 'tv' : 'all';
 
-  // Mode Display TV publik: hanya kembalikan data antrean non-sensitif
-  if (view === 'tv') {
-    const patients = await prisma.patient.findMany({
-      include: {
-        encounters: {
-          orderBy: { createdAt: 'desc' },
-          take: 1,
-        },
-      },
-      orderBy: { createdAt: 'asc' },
+  try {
+    // Mode Display TV publik: hanya kembalikan data antrean non-sensitif
+    if (view === 'tv') {
+      const queue = await getClinicRepository().listPatients('tv');
+      return NextResponse.json({
+        patients: queue.map((p) => ({
+          id: p.id,
+          encounterId: p.encounterId || '',
+          queueNumber: p.queueNumber,
+          name: p.name,
+          rmNumber: p.rmNumber,
+          age: p.age,
+          statusKunjungan: p.statusKunjungan,
+        })),
+      });
+    }
+
+    const { errorResponse } = await requireAuth(['DOKTER', 'DOKTER_LAIN', 'PENDAFTARAN', 'KASIR']);
+    if (errorResponse) return errorResponse;
+
+    const patients = await getClinicRepository().listPatients('all');
+
+    if (isMockDataMode()) {
+      return NextResponse.json({
+        patients,
+        meta: { nextQueueNumber: `A-${String(patients.length + 1).padStart(2, '0')}`, nextRmNumber: 'RM-DEV-NEXT' },
+      });
+    }
+
+    const today = new Date().toISOString().slice(0, 10);
+    const nextQueueNumber = await getNextQueueNumber(today);
+    const nextRmNumber = await getNextRmNumber();
+
+    return NextResponse.json({
+      patients,
+      meta: { nextQueueNumber, nextRmNumber },
     });
-
-    const queue = patients
-      .filter((p) => p.encounters.length > 0)
-      .map((p) => ({
-        id: p.id,
-        encounterId: p.encounters[0].id,
-        queueNumber: p.encounters[0].queueNumber,
-        name: p.name,
-        rmNumber: p.rmNumber,
-        age: p.age,
-        statusKunjungan: p.encounters[0].statusKunjungan,
-      }));
-
-    return NextResponse.json({ patients: queue });
+  } catch (err) {
+    console.error('GET /api/patients error:', err);
+    return NextResponse.json(
+      { error: 'Gagal memuat data pasien dari database.' },
+      { status: 500 }
+    );
   }
-
-  const { errorResponse } = await requireAuth(['DOKTER', 'DOKTER_LAIN', 'PENDAFTARAN', 'KASIR']);
-  if (errorResponse) return errorResponse;
-
-  const patients = await prisma.patient.findMany({
-    include: {
-      encounters: {
-        orderBy: { createdAt: 'desc' },
-        take: 1,
-        include: {
-          odontogram: true,
-        },
-      },
-    },
-    orderBy: { createdAt: 'desc' },
-  });
-
-  const serialized = patients.map(serializePatientWithEncounter);
-  const today = new Date().toISOString().slice(0, 10);
-  const nextQueueNumber = await getNextQueueNumber(today);
-  const nextRmNumber = await getNextRmNumber();
-
-  return NextResponse.json({
-    patients: serialized,
-    meta: { nextQueueNumber, nextRmNumber },
-  });
 }
 
 export async function POST(request: Request) {

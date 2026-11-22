@@ -6,15 +6,19 @@
   "scripts": {
     "dev": "next dev",
     "dev:all": "npm run sync:docs && next dev",
-    "build": "prisma generate && next build",
+    "build": "node --import tsx scripts/validate-env.ts && node --import tsx scripts/prepare-prisma.ts && next build",
     "start": "next start",
-    "postinstall": "prisma generate",
+    "postinstall": "node --import tsx scripts/prepare-prisma.ts",
     "build:landing": "node --import tsx scripts/sync-landing-docs.ts",
     "export:landing": "npm run build:landing",
     "sync:docs": "npm run build:landing",
     "validate:docs": "node --import tsx scripts/sync-landing-docs.ts --validate",
+    "validate:env": "node --import tsx scripts/validate-env.ts",
+    "db:generate": "node --import tsx scripts/prepare-prisma.ts",
+    "db:migrate:deploy": "prisma migrate deploy --schema=prisma/schema.postgresql.prisma",
     "db:push": "prisma db push",
-    "db:seed": "tsx prisma/seed.ts",
+    "db:seed": "node --import tsx prisma/seed.ts",
+    "db:seed:dev": "node --import tsx prisma/seed.dev.ts",
     "db:studio": "prisma studio"
   },
   "dependencies": {

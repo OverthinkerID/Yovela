@@ -238,3 +238,18 @@ html.dark .skeleton-shimmer {
   display: inline-block;
   animation: marquee 28s linear infinite;
 }
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+}

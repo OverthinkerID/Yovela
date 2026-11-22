@@ -8,6 +8,7 @@ export type UserRole = 'DOKTER' | 'DOKTER_LAIN' | 'PENDAFTARAN' | 'KASIR';
 export interface User {
   id: string;
   username: string;
+  email?: string | null;
   name: string;
   role: UserRole;
   roleLabel: string;
@@ -22,10 +23,11 @@ export interface StaffAccount extends User {
 interface AuthContextType {
   currentUser: User | null;
   staffUsers: StaffAccount[];
-  loginWithCredentials: (username: string, pass: string) => Promise<{ success: boolean; message?: string }>;
+  loginWithCredentials: (identifier: string, pass: string, rememberMe?: boolean) => Promise<{ success: boolean; message?: string }>;
   registerAccount: (payload: {
     name: string;
-    username: string;
+    email?: string;
+    username?: string;
     pass: string;
     registrationToken: string;
   }) => Promise<{ success: boolean; message?: string; assignedRole?: string }>;
@@ -106,12 +108,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const registerAccount = async ({
     name,
+    email,
     username,
     pass,
     registrationToken,
   }: {
     name: string;
-    username: string;
+    email?: string;
+    username?: string;
     pass: string;
     registrationToken: string;
   }) => {
@@ -119,7 +123,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, username, password: pass, registrationToken }),
+        body: JSON.stringify({ name, email, username, password: pass, registrationToken }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -131,16 +135,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const loginWithCredentials = async (username: string, pass: string) => {
+  const loginWithCredentials = async (identifier: string, pass: string, rememberMe = false) => {
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password: pass }),
+        body: JSON.stringify({ identifier, username: identifier, password: pass, rememberMe }),
       });
       const data = await res.json();
       if (!res.ok) {
-        return { success: false, message: data.error || 'Username atau kata sandi tidak cocok!' };
+        return { success: false, message: data.error || 'Email atau kata sandi tidak valid.' };
       }
       setCurrentUser(data.user);
       return { success: true };

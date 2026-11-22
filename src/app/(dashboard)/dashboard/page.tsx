@@ -7,7 +7,7 @@ import { KpiCard } from '@/components/ui/KpiCard';
 import { KpiSkeletonGrid, CardListSkeleton } from '@/components/ui/LoadingSkeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { StatusBadge } from '@/components/ui/StatusBadge';
-import { PatientRecord } from '../../../data/patientDatabase';
+import { PatientRecord } from '../../../types/clinic';
 import { useAuth } from '../../../context/AuthContext';
 
 interface AppointmentPreview {

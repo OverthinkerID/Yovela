@@ -16,14 +16,8 @@ import { StatusBadge } from '../../../components/ui/StatusBadge';
 import { InvoiceReceipt } from '../../../components/InvoiceReceipt';
 import { ConsentMediaModal } from '../../../components/ConsentMediaModal';
 import { CustomSelect } from '../../../components/CustomSelect';
-import { TREATMENTS, DIAGNOSES, Treatment } from '../../../data/mockData';
-import { 
-  PatientRecord, 
-  getStoredPatients, 
-  saveStoredPatients, 
-  getActivePatient, 
-  setActivePatient 
-} from '../../../data/patientDatabase';
+import { PatientRecord, Treatment } from '../../../types/clinic';
+import { DIAGNOSES } from '../../../lib/data/clinicalCatalog';
 import { useAuth } from '../../../context/AuthContext';
 import { useToast } from '../../../context/ToastContext';
 
@@ -57,7 +51,7 @@ export default function DentalClinicDashboard() {
   }
 
   const [patientList, setPatientList] = useState<PatientRecord[]>([]);
-  const [treatmentCatalog, setTreatmentCatalog] = useState<Treatment[]>(TREATMENTS);
+  const [treatmentCatalog, setTreatmentCatalog] = useState<Treatment[]>([]);
   const [showTariffModal, setShowTariffModal] = useState(false);
   const [showConsentMediaModal, setShowConsentMediaModal] = useState(false);
   const [consentSignedBadge, setConsentSignedBadge] = useState(false);
@@ -122,7 +116,7 @@ export default function DentalClinicDashboard() {
         }
       }
     } catch {}
-    return TREATMENTS;
+    return [];
   };
 
   useEffect(() => {
@@ -179,7 +173,9 @@ export default function DentalClinicDashboard() {
   const loadPatientData = (patient: PatientRecord, catalogOverride?: Treatment[]) => {
     const catalog = catalogOverride || treatmentCatalog;
     setSelectedPatient(patient);
-    setActivePatient(patient);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('yovela_active_patient_id', patient.id);
+    }
     setPreviewEncounter(null);
     setOdontogram(patient.initialOdontogram || {});
     setSubjective(patient.lastSoap?.subjective || '');
@@ -190,7 +186,7 @@ export default function DentalClinicDashboard() {
     );
 
     const matched = catalog.filter((t) => patient.lastSoap?.suggestedTreatments?.includes(t.id));
-    setSelectedTreatments(matched.length > 0 ? matched : [catalog[0] || TREATMENTS[0]]);
+    setSelectedTreatments(matched.length > 0 ? matched : catalog.length > 0 ? [catalog[0]] : []);
     setIsCompleted(patient.statusKunjungan === 'Menunggu Pembayaran');
     setValidationError(null);
     setLastDraftSavedAt(null);
@@ -497,7 +493,9 @@ export default function DentalClinicDashboard() {
       const updatedPatient: PatientRecord = data.patient;
       setPatientList((prev) => prev.map((p) => (p.id === updatedPatient.id ? updatedPatient : p)));
       setSelectedPatient(updatedPatient);
-      setActivePatient(updatedPatient);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('yovela_active_patient_id', updatedPatient.id);
+      }
       if (mode === 'finalize') {
         setIsCompleted(true);
         showToast('Rekam medis selesai & tagihan terkirim ke kasir.', 'success');

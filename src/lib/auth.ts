@@ -2,12 +2,14 @@ import crypto from 'crypto';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { prisma } from './prisma';
+import { getAuthSecret } from './environment';
 
 export type UserRole = 'DOKTER' | 'DOKTER_LAIN' | 'PENDAFTARAN' | 'KASIR';
 
 export interface SessionUser {
   id: string;
   username: string;
+  email?: string | null;
   name: string;
   role: UserRole;
   roleLabel: string;
@@ -17,19 +19,16 @@ export interface SessionUser {
 
 const COOKIE_NAME = 'yovela_session';
 const SESSION_MAX_AGE = 60 * 60 * 12; // 12 jam
-
-function getSecret(): string {
-  return process.env.SESSION_SECRET || 'yovela-dental-clinic-fallback-dev-secret-2026';
-}
+const REMEMBER_ME_MAX_AGE = 60 * 60 * 24 * 14; // 14 hari
 
 function signPayload(payloadB64: string): string {
-  return crypto.createHmac('sha256', getSecret()).update(payloadB64).digest('base64url');
+  return crypto.createHmac('sha256', getAuthSecret()).update(payloadB64).digest('base64url');
 }
 
-export function createSessionToken(userId: string): string {
+export function createSessionToken(userId: string, maxAgeSeconds = SESSION_MAX_AGE): string {
   const payload = {
     userId,
-    exp: Date.now() + SESSION_MAX_AGE * 1000,
+    exp: Date.now() + maxAgeSeconds * 1000,
   };
   const payloadB64 = Buffer.from(JSON.stringify(payload)).toString('base64url');
   const sig = signPayload(payloadB64);
@@ -59,15 +58,16 @@ export function verifySessionToken(token: string): { userId: string } | null {
   }
 }
 
-export async function setSessionCookie(userId: string) {
-  const token = createSessionToken(userId);
+export async function setSessionCookie(userId: string, options?: { rememberMe?: boolean }) {
+  const maxAge = options?.rememberMe ? REMEMBER_ME_MAX_AGE : SESSION_MAX_AGE;
+  const token = createSessionToken(userId, maxAge);
   const cookieStore = await cookies();
   cookieStore.set(COOKIE_NAME, token, {
     httpOnly: true,
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
     path: '/',
-    maxAge: SESSION_MAX_AGE,
+    maxAge,
   });
 }
 
@@ -89,6 +89,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     select: {
       id: true,
       username: true,
+      email: true,
       name: true,
       role: true,
       roleLabel: true,
@@ -103,6 +104,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   return {
     id: user.id,
     username: user.username,
+    email: user.email,
     name: user.name,
     role: user.role as UserRole,
     roleLabel: user.roleLabel,

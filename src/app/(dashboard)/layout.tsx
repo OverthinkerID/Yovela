@@ -55,13 +55,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const isTVDisplay = pathname?.includes('/display-antrean');
 
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const [searchSidebarQuery, setSearchSidebarQuery] = useState('');
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({
-    OVERVIEW: true,
-    OPERASIONAL: false,
-    'PELAYANAN MEDIS': false,
-    'KEUANGAN & LOGISTIK': false,
+    OPERASIONAL: true,
+    'PELAYANAN MEDIS': true,
+    'KEUANGAN & LOGISTIK': true,
   });
 
   useEffect(() => {
@@ -75,33 +73,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       }
     } catch {}
   }, []);
-
-  // Auto-collapse kategori menu setelah 4 detik jika kursor tidak berada di sidebar
-  useEffect(() => {
-    const hasExpandedGroup =
-      openCategories.OPERASIONAL ||
-      openCategories['PELAYANAN MEDIS'] ||
-      openCategories['KEUANGAN & LOGISTIK'];
-    if (!hasExpandedGroup || isSidebarHovered || isCollapsed || searchSidebarQuery.trim()) {
-      return;
-    }
-    const timer = setTimeout(() => {
-      setOpenCategories((prev) => {
-        const next = {
-          ...prev,
-          OVERVIEW: true,
-          OPERASIONAL: false,
-          'PELAYANAN MEDIS': false,
-          'KEUANGAN & LOGISTIK': false,
-        };
-        try {
-          sessionStorage.setItem('yovela_sidebar_open_cats', JSON.stringify(next));
-        } catch {}
-        return next;
-      });
-    }, 4000);
-    return () => clearTimeout(timer);
-  }, [openCategories, isSidebarHovered, isCollapsed, searchSidebarQuery]);
 
   const toggleCategory = (catId: string) => {
     setOpenCategories((prev) => {
@@ -255,7 +226,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   interface SidebarCategory {
     id: string;
     label: string;
-    icon: string;
     items: SidebarNavItem[];
   }
 
@@ -288,19 +258,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const myPerms = rolePermissions[currentUser.role] || DEFAULT_PERMS[currentUser.role] || ['dashboard'];
   const authorizedMenuList = menuList.filter((m) => myPerms.includes(m.permKey));
 
+  const showDashboardMenu =
+    myPerms.includes('dashboard') &&
+    (!searchSidebarQuery.trim() || 'dashboard'.includes(searchSidebarQuery.toLowerCase()));
+
   const sidebarCategories: SidebarCategory[] = [
-    {
-      id: 'OVERVIEW',
-      label: 'OVERVIEW',
-      icon: 'house-chimney',
-      items: [
-        { id: 'dashboard', permKey: 'dashboard', href: '/dashboard', label: 'Dashboard', icon: 'house-chimney' },
-      ],
-    },
     {
       id: 'OPERASIONAL',
       label: 'OPERASIONAL',
-      icon: 'calendar-check',
       items: [
         { id: 'jadwal', permKey: 'jadwal', href: '/jadwal', label: 'Jadwal & Booking', icon: 'calendar-check' },
         { id: 'pasien', permKey: 'pasien', href: '/pasien', label: 'Data Pasien', icon: 'user-plus' },
@@ -311,7 +276,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     {
       id: 'PELAYANAN MEDIS',
       label: 'PELAYANAN MEDIS',
-      icon: 'tooth',
       items: [
         { id: 'poli', permKey: 'poli', href: '/poli', label: 'Poli / Pemeriksaan', icon: 'tooth' },
         { id: 'odontogram', permKey: 'poli', href: '/poli#odontogram', label: 'Rekam Medis & Odontogram', icon: 'notes-medical' },
@@ -321,7 +285,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     {
       id: 'KEUANGAN & LOGISTIK',
       label: 'KEUANGAN & LOGISTIK',
-      icon: 'wallet',
       items: [
         { id: 'kasir', permKey: 'kasir', href: '/kasir', label: 'Kasir & Pembayaran', icon: 'receipt' },
         { id: 'laporan', permKey: 'laporan', label: 'Laporan Keuangan', href: '/laporan', icon: 'chart-pie' } as SidebarNavItem,
@@ -430,8 +393,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* DESKTOP FLOATING GLASS DOCK (Forest Green + Oat Milk + Red Tomato) */}
       <aside
-        onMouseEnter={() => setIsSidebarHovered(true)}
-        onMouseLeave={() => setIsSidebarHovered(false)}
         className={`hidden md:flex sticky top-3 h-[calc(100vh-1.5rem)] ml-3 my-3 rounded-[28px] bg-[#1B4332]/96 backdrop-blur-xl border border-[#2D6A4F] shadow-2xl shadow-[#1B4332]/25 text-[#FAF7F0] flex-col justify-between shrink-0 transition-all duration-300 ease-out z-40 select-none print:hidden ${
           isCollapsed ? 'w-[76px]' : 'w-64'
         }`}
@@ -487,7 +448,33 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             aria-label="Navigasi Kategori Desktop"
             className={`p-3 space-y-2 text-xs font-semibold flex-1 ${isCollapsed ? 'overflow-visible' : 'overflow-y-auto'}`}
           >
-            {visibleCategories.map((cat, catIdx) => {
+            {showDashboardMenu && (
+              <Link
+                href="/dashboard"
+                className={`relative group/item w-full flex items-center rounded-2xl transition-all duration-150 cursor-pointer ${
+                  isCollapsed ? 'justify-center p-2.5' : 'justify-between px-3 py-2'
+                } ${
+                  normalizedPath === '/dashboard'
+                    ? 'bg-[#FAF7F0] text-[#1B4332] font-black shadow-lg shadow-black/15'
+                    : 'text-[#C7DFD1] hover:bg-white/10 hover:text-white font-bold'
+                }`}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  {normalizedPath === '/dashboard' && !isCollapsed && (
+                    <span className="w-1.5 h-4 rounded-full bg-[#E63946] shrink-0" />
+                  )}
+                  <AppIcon name="house-chimney" className="w-4 h-4 shrink-0" />
+                  {!isCollapsed && <span className="truncate">Dashboard</span>}
+                </div>
+                {isCollapsed && (
+                  <span className="pointer-events-none opacity-0 group-hover/item:opacity-100 translate-x-1 group-hover/item:translate-x-0 transition-all duration-150 absolute left-full ml-3.5 px-3 py-1.5 rounded-xl bg-[#0E261C] text-[#FAF7F0] text-[11px] font-bold whitespace-nowrap shadow-xl border border-[#2D6A4F] z-50">
+                    <span>Dashboard</span>
+                  </span>
+                )}
+              </Link>
+            )}
+
+            {visibleCategories.map((cat) => {
               const isCategoryOpen = searchSidebarQuery.trim().length > 0 ? true : (openCategories[cat.id] ?? true);
               const isItemActive = (item: SidebarNavItem) => {
                 if (!item.href) return false;
@@ -500,7 +487,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               return (
                 <div
                   key={cat.id}
-                  className={catIdx > 0 && isCollapsed ? 'pt-2 border-t border-white/10 space-y-1' : 'space-y-1'}
+                  className={isCollapsed ? 'pt-2 border-t border-white/10 space-y-1' : 'pt-1 space-y-1'}
                 >
                   {!isCollapsed && (
                     <button
@@ -512,7 +499,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       }`}
                     >
                       <span className="flex items-center gap-2 min-w-0">
-                        <AppIcon name={cat.icon} className="w-4 h-4 shrink-0 text-[#95D5B2]" />
                         <span className="truncate">{cat.label}</span>
                         {hasActiveChild && !isCategoryOpen && (
                           <span className="w-1.5 h-1.5 rounded-full bg-[#E63946] shrink-0" />
@@ -624,7 +610,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </aside>
 
       {/* KONTEN UTAMA & FLOATING GLASS HEADER (MELAYANG & STATIS DI ATAS) */}
-      <div className="flex-1 flex flex-col min-w-0 w-full overflow-x-hidden pb-28 md:pb-0">
+      <div className="flex-1 flex flex-col min-w-0 w-full overflow-x-clip pb-28 md:pb-0">
         <div className="px-3 pt-3 sticky top-0 z-30 print:hidden">
           <header className="bg-[#FAF7F0]/90 backdrop-blur-xl border border-[#DED6C5] rounded-2xl px-4 sm:px-5 py-2.5 shadow-xs flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 min-w-0">
@@ -1421,8 +1407,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <div className="space-y-4">
                 <div className="p-6 rounded-3xl bg-gradient-to-br from-[#1B4332] via-[#173A2B] to-[#0E261C] text-[#FAF7F0] border border-[#2D6A4F] space-y-4">
                   <div className="flex items-center gap-3.5">
-                    <div className="w-12 h-12 rounded-2xl bg-[#FAF7F0]/15 border border-[#FAF7F0]/25 flex items-center justify-center">
-                      <AppIcon name="sparkles" className="w-6 h-6 text-[#95D5B2]" />
+                    <div className="w-12 h-12 rounded-full bg-[#FAF7F0]/15 border border-[#FAF7F0]/25 flex items-center justify-center p-2.5 shrink-0">
+                      <svg viewBox="0 0 512 512" className="w-full h-full fill-[#FAF7F0]" aria-hidden="true">
+                        <path d="M416 112c-35.3 0-64 28.7-64 64v51.2c0 23.4-12.2 44.9-32.3 56.8L272 312.6l-47.7-28.6c-20.1-12-32.3-33.5-32.3-56.8V176c0-35.3-28.7-64-64-64S64 140.7 64 176c0 86.8 52.3 162.7 128 193.3V432c0 17.7 14.3 32 32 32h64c17.7 0 32-14.3 32-32V369.3c75.7-30.6 128-106.5 128-193.3c0-35.3-28.7-64-64-64z" />
+                      </svg>
                     </div>
                     <div>
                       <h4 className="text-base font-black tracking-tight">Yovela Dental Clinic v3.3</h4>

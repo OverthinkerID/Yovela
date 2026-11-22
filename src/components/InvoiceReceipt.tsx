@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Treatment } from '../data/mockData';
+import { Treatment } from '../types/clinic';
 
 export interface InvoiceData {
   invoiceNo: string;

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { AppIcon } from "@/components/AppIcon";
-import { getStoredPatients, PatientRecord } from '../../../data/patientDatabase';
+import { PatientRecord } from '../../../types/clinic';
 
 export default function DisplayAntreanPage() {
   const [currentCall, setCurrentCall] = useState({

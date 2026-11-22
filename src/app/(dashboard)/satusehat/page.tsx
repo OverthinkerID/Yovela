@@ -3,12 +3,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { AppIcon } from "@/components/AppIcon";
 import Link from 'next/link';
-import { 
-  getStoredPatients, 
-  saveStoredPatients, 
-  PatientRecord 
-} from '../../../data/patientDatabase';
-import { DIAGNOSES, TREATMENTS } from '../../../data/mockData';
+import { PatientRecord, Treatment } from '../../../types/clinic';
+import { DIAGNOSES } from '../../../lib/data/clinicalCatalog';
 import { useAuth } from '../../../context/AuthContext';
 
 interface SyncLog {
@@ -25,6 +21,7 @@ interface SyncLog {
 export default function SatuSehatIntegrationPage() {
   const { currentUser } = useAuth();
   const [patients, setPatients] = useState<PatientRecord[]>([]);
+  const [treatments, setTreatments] = useState<Treatment[]>([]);
   const [selectedPatientId, setSelectedPatientId] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [syncingId, setSyncingId] = useState<string | null>(null);
@@ -44,9 +41,10 @@ export default function SatuSehatIntegrationPage() {
   useEffect(() => {
     const loadSatuSehat = async () => {
       try {
-        const [pRes, lRes] = await Promise.all([
+        const [pRes, lRes, tRes] = await Promise.all([
           fetch('/api/patients', { cache: 'no-store' }),
           fetch('/api/satusehat', { cache: 'no-store' }),
+          fetch('/api/treatments', { cache: 'no-store' }),
         ]);
         if (pRes.ok) {
           const pData = await pRes.json();
@@ -57,6 +55,10 @@ export default function SatuSehatIntegrationPage() {
         if (lRes.ok) {
           const lData = await lRes.json();
           setSyncLogs(lData.logs || []);
+        }
+        if (tRes.ok) {
+          const tData = await tRes.json();
+          setTreatments(tData.treatments || []);
         }
       } catch (err) {
         console.error('Gagal memuat data SATUSEHAT:', err);
@@ -77,7 +79,13 @@ export default function SatuSehatIntegrationPage() {
     const conditionCode = activePatient.lastSoap?.diagnosisIcd10 || 'K02.1';
     const conditionMeta = DIAGNOSES.find((d) => d.code === conditionCode) || DIAGNOSES[0];
     const treatmentId = activePatient.lastSoap?.suggestedTreatments?.[0] || 'TRT-001';
-    const treatmentMeta = TREATMENTS.find((t) => t.id === treatmentId) || TREATMENTS[0];
+    const treatmentMeta = treatments.find((t) => t.id === treatmentId) || {
+      id: treatmentId,
+      name: 'Pemeriksaan & Tindakan Gigi',
+      icd9cm: '89.31',
+      price: 0,
+      category: 'Pemeriksaan & Preventif',
+    };
 
     return {
       Encounter: {
@@ -186,7 +194,7 @@ export default function SatuSehatIntegrationPage() {
         },
       },
     };
-  }, [activePatient]);
+  }, [activePatient, treatments]);
 
   // Kirim Sinkronisasi Data ke SATUSEHAT via API Prisma
   const handleSyncPatient = async (patient: PatientRecord) => {

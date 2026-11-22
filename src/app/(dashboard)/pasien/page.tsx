@@ -3,12 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { AppIcon } from "@/components/AppIcon";
 import Link from 'next/link';
-import { 
-  getStoredPatients, 
-  saveStoredPatients, 
-  setActivePatient, 
-  PatientRecord 
-} from '../../../data/patientDatabase';
+import { PatientRecord } from '../../../types/clinic';
 import { useAuth } from '../../../context/AuthContext';
 
 export default function PendaftaranPasienPage() {
@@ -104,7 +99,9 @@ export default function PendaftaranPasienPage() {
       }
 
       const newRecord: PatientRecord = data.patient;
-      setActivePatient(newRecord);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('yovela_active_patient_id', newRecord.id);
+      }
       setTicketModalData(newRecord);
       setToastMessage(`Pasien ${newRecord.name} berhasil terdaftar dengan antrean ${newRecord.queueNumber}`);
       setTimeout(() => setToastMessage(''), 4000);
@@ -142,7 +139,9 @@ export default function PendaftaranPasienPage() {
       }
 
       const updatedPatient: PatientRecord = data.patient;
-      setActivePatient(updatedPatient);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('yovela_active_patient_id', updatedPatient.id);
+      }
       setTicketModalData(updatedPatient);
       setToastMessage(`Antrean ${updatedPatient.queueNumber} diterbitkan untuk ${updatedPatient.name}`);
       setTimeout(() => setToastMessage(''), 4000);

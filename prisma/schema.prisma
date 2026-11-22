@@ -8,22 +8,38 @@ datasource db {
 }
 
 model User {
-  id                String        @id @default(cuid())
-  username          String        @unique
-  passwordHash      String
-  name              String
-  role              String        // DOKTER | PENDAFTARAN | KASIR
-  roleLabel         String
-  sipNumber         String?
-  ihsPractitionerId String?
-  isActive          Boolean       @default(true)
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  id                  String               @id @default(cuid())
+  username            String               @unique
+  email               String?              @unique
+  passwordHash        String
+  name                String
+  role                String               // DOKTER | DOKTER_LAIN | PENDAFTARAN | KASIR
+  roleLabel           String
+  sipNumber           String?
+  ihsPractitionerId   String?
+  isActive            Boolean              @default(true)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
 
-  encounters        Encounter[]   @relation("DoctorEncounters")
-  appointments      Appointment[] @relation("DoctorAppointments")
-  invoices          Invoice[]     @relation("CashierInvoices")
-  auditLogs         AuditLog[]
+  encounters          Encounter[]          @relation("DoctorEncounters")
+  appointments        Appointment[]        @relation("DoctorAppointments")
+  invoices            Invoice[]            @relation("CashierInvoices")
+  auditLogs           AuditLog[]
+  passwordResetTokens PasswordResetToken[]
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 model Patient {

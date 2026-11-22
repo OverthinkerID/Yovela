@@ -1,0 +1,349 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id                  String               @id @default(cuid())
+  username            String               @unique
+  email               String?              @unique
+  passwordHash        String
+  name                String
+  role                String               // DOKTER | DOKTER_LAIN | PENDAFTARAN | KASIR
+  roleLabel           String
+  sipNumber           String?
+  ihsPractitionerId   String?
+  isActive            Boolean              @default(true)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  encounters          Encounter[]          @relation("DoctorEncounters")
+  appointments        Appointment[]        @relation("DoctorAppointments")
+  invoices            Invoice[]            @relation("CashierInvoices")
+  auditLogs           AuditLog[]
+  passwordResetTokens PasswordResetToken[]
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Patient {
+  id           String             @id @default(cuid())
+  rmNumber     String             @unique
+  nik          String?
+  ihsPatientId String?
+  name         String
+  birthDate    String?
+  age          Int
+  gender       String             // Laki-laki | Perempuan
+  phone        String
+  address      String             @default("")
+  allergies    String             @default("Tidak Ada")
+  registeredBy String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  appointments  Appointment[]
+  encounters    Encounter[]
+  odontograms   OdontogramRecord[]
+  invoices      Invoice[]
+  clinicalMedia ClinicalMedia[]
+}
+
+model Appointment {
+  id             String   @id @default(cuid())
+  patientId      String
+  doctorId       String?
+  scheduledDate  String   // YYYY-MM-DD
+  scheduledTime  String   // HH:mm
+  durationMin    Int      @default(30)
+  chiefComplaint String   @default("")
+  notes          String?
+  status         String   @default("BOOKED") // BOOKED | CONFIRMED | ARRIVED | CANCELLED | NO_SHOW
+  reminderSent   Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  patient        Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor         User?    @relation("DoctorAppointments", fields: [doctorId], references: [id])
+
+  @@index([scheduledDate])
+  @@index([status])
+}
+
+model Encounter {
+  id                      String             @id @default(cuid())
+  patientId               String
+  doctorId                String?
+  visitDate               String             // YYYY-MM-DD
+  queueNumber             String
+  roomName                String             @default("Ruang Tindakan 01")
+  statusKunjungan         String             @default("Menunggu") // Menunggu | Sedang Diperiksa | Menunggu Pembayaran | Selesai
+  subjective              String             @default("")
+  objective               String             @default("")
+  diagnosisIcd10          String             @default("K02.1")
+  suggestedTreatmentsJson String             @default("[\"TRT-001\"]")
+  prescriptionNotes       String             @default("")
+  consentSigned           Boolean            @default(false)
+  consentSignerName       String?
+  consentProcedure        String?
+  consentSignatureData    String?
+  consentSignedAt         DateTime?
+  registeredBy            String?
+  createdAt               DateTime           @default(now())
+  updatedAt               DateTime           @updatedAt
+
+  patient                 Patient            @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor                  User?              @relation("DoctorEncounters", fields: [doctorId], references: [id])
+  odontogram              OdontogramRecord?
+  invoice                 Invoice?
+  syncLogs                SatuSehatSyncLog[]
+  clinicalMedia           ClinicalMedia[]
+
+  @@index([visitDate])
+  @@index([statusKunjungan])
+}
+
+model OdontogramRecord {
+  id            String    @id @default(cuid())
+  encounterId   String    @unique
+  patientId     String
+  dentitionType String    @default("adult") // adult | deciduous | mixed
+  teethJson     String    @default("{}")
+  dmftD         Int       @default(0)
+  dmftM         Int       @default(0)
+  dmftF         Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  encounter     Encounter @relation(fields: [encounterId], references: [id], onDelete: Cascade)
+  patient       Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+}
+
+model Treatment {
+  id           String        @id // TRT-001 .. TRT-030
+  category     String
+  name         String
+  price        Int
+  icd9cm       String
+  description  String?
+  isActive     Boolean       @default(true)
+  invoiceItems InvoiceItem[]
+}
+
+model Invoice {
+  id              String           @id @default(cuid())
+  invoiceNo       String           @unique
+  encounterId     String           @unique
+  patientId       String
+  doctorName      String
+  cashierId       String?
+  cashierName     String
+  paymentMethod   String           // Tunai | QRIS | Debit/Transfer
+  subtotal        Int              @default(0)
+  discountAmount  Int              @default(0)
+  discountNote    String?
+  amount          Int              // Total setelah diskon
+  paidAmount      Int              @default(0)
+  remainingAmount Int              @default(0)
+  cashGiven       Int?
+  change          Int              @default(0)
+  status          String           @default("PAID") // PAID | PARTIAL | VOID
+  paidAt          DateTime         @default(now())
+  createdAt       DateTime         @default(now())
+
+  encounter       Encounter        @relation(fields: [encounterId], references: [id], onDelete: Cascade)
+  patient         Patient          @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  cashier         User?            @relation("CashierInvoices", fields: [cashierId], references: [id])
+  items           InvoiceItem[]
+  payments        InvoicePayment[]
+
+  @@index([paidAt])
+  @@index([status])
+}
+
+model InvoicePayment {
+  id            String   @id @default(cuid())
+  invoiceId     String
+  amount        Int
+  paymentMethod String   // Tunai | QRIS | Debit/Transfer
+  cashGiven     Int?
+  change        Int      @default(0)
+  note          String?
+  cashierId     String?
+  cashierName   String
+  paidAt        DateTime @default(now())
+
+  invoice       Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+}
+
+model InvoiceItem {
+  id            String     @id @default(cuid())
+  invoiceId     String
+  treatmentId   String?
+  treatmentName String
+  icd9cm        String?
+  unitPrice     Int
+  qty           Int        @default(1)
+  lineTotal     Int
+
+  invoice       Invoice    @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  treatment     Treatment? @relation(fields: [treatmentId], references: [id])
+}
+
+model SatuSehatSyncLog {
+  id             String    @id @default(cuid())
+  encounterId    String
+  patientName    String
+  nik            String
+  resourceType   String
+  resourceId     String
+  status         String
+  rawPayloadJson String
+  createdAt      DateTime  @default(now())
+
+  encounter      Encounter @relation(fields: [encounterId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  userId       String?
+  action       String
+  entityType   String
+  entityId     String
+  metadataJson String?
+  createdAt    DateTime @default(now())
+
+  user         User?    @relation(fields: [userId], references: [id])
+}
+
+model QueueCall {
+  id          String   @id @default(cuid())
+  queueNumber String
+  patientName String
+  roomName    String   @default("Ruang Tindakan 01")
+  doctorName  String
+  calledAt    DateTime @default(now())
+
+  @@index([calledAt])
+}
+
+model ClinicalMedia {
+  id          String    @id @default(cuid())
+  encounterId String
+  patientId   String
+  mediaType   String    @default("INTRAORAL") // INTRAORAL | RONTGEN | BEFORE | AFTER
+  caption     String    @default("")
+  fileName    String
+  mimeType    String
+  dataUrl     String
+  createdAt   DateTime  @default(now())
+
+  encounter   Encounter @relation(fields: [encounterId], references: [id], onDelete: Cascade)
+  patient     Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([encounterId])
+  @@index([patientId])
+}
+
+model RegistrationToken {
+  id        String    @id @default(cuid())
+  code      String    @unique
+  role      String    // DOKTER | PENDAFTARAN | KASIR
+  roleLabel String
+  maxUses   Int       @default(10)
+  usedCount Int       @default(0)
+  isActive  Boolean   @default(true)
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+}
+
+model Testimonial {
+  id          String   @id @default(cuid())
+  patientName String
+  serviceName String
+  rating      Int      @default(5)
+  comment     String
+  source      String   @default("CLINIC_APP") // CLINIC_APP | GOOGLE_REVIEW
+  isPublished Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}
+
+model Expense {
+  id          String   @id @default(cuid())
+  date        String   // YYYY-MM-DD
+  category    String   // Gaji Karyawan | Listrik | Air | Pembelian Alat Medis | Pembelian Bahan/BHP | Sewa & Operasional | Lainnya
+  description String
+  amount      Int
+  periodType  String   @default("BULANAN") // BULANAN | TAHUNAN | INSIDENTAL
+  createdBy   String?
+  createdAt   DateTime @default(now())
+
+  @@index([date])
+  @@index([category])
+}
+
+model RolePermission {
+  id              String   @id @default(cuid())
+  role            String   @unique // DOKTER | PENDAFTARAN | KASIR
+  permissionsJson String   // JSON array of allowed module keys
+  updatedAt       DateTime @updatedAt
+}
+
+model ClinicSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model InventoryItem {
+  id            String              @id @default(cuid())
+  code          String              @unique
+  name          String
+  category      String              // APD | Bahan Tambal | Anestesi | Sterilisasi | Instrumen | Lainnya
+  unit          String              @default("Box") // Box | Pcs | Syringe | Botol | Pack
+  stockQty      Int                 @default(0)
+  minStock      Int                 @default(5)
+  unitPrice     Int                 @default(0)
+  lastRestockAt DateTime?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  movements     InventoryMovement[]
+
+  @@index([category])
+}
+
+model InventoryMovement {
+  id          String        @id @default(cuid())
+  itemId      String
+  type        String        // IN | OUT
+  qty         Int
+  unitCost    Int           @default(0)
+  totalCost   Int           @default(0)
+  notes       String        @default("")
+  expenseId   String?
+  createdBy   String?
+  createdAt   DateTime      @default(now())
+
+  item        InventoryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([itemId])
+  @@index([createdAt])
+}
